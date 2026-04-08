@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام الجباية المتكامل</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <style>
+        /* ==================== ستايلات النظام ==================== */
+        :root { 
+            --primary: #1a5276; --secondary: #2980b9; --success: #27ae60; --danger: #c0392b; --warning: #f39c12; --dark: #34495e;
+            --purple: #8e44ad; --backup: #7f8c8d;
+            --bg-color: #f4f4f4; --text-color: #333; --card-bg: rgba(255, 255, 255, 0.95);
+            --calc-bg: #222; --calc-btn: #333; --calc-text: #fff; --calc-accent: #f39c12;
+            --summary-light: #85c1e9; 
+        }
+        .dark-mode { --bg-color: #1a1a1a; --text-color: #ecf0f1; --card-bg: #2c3e50; }
+        body { font-family: 'Segoe UI', Tahoma, Arial; margin: 0; padding: 20px; direction: rtl; background-color: var(--bg-color); color: var(--text-color); transition: 0.3s; padding-bottom: 50px; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        h2, h3 { color: var(--primary); border-bottom: 2px solid var(--secondary); padding-bottom: 8px;}
+        label { font-weight:bold; display: block; margin: 10px 0 5px;}
+        input, select, button { padding:12px; border-radius:8px; border:1px solid #ccc; font-size: 14px;}
+        button { cursor:pointer; color: white; border: none; transition: 0.3s; font-weight: bold;}
+        .btn-save { background: var(--success); }
+        .form-row { display:flex; gap:15px; flex-wrap:wrap; align-items: flex-end;}
+        
+        table { width:100%; border-collapse:collapse; margin-top:15px; background: white; color: #000; font-size: 15px;}
+        th, td { border:1px solid #999; padding:10px; text-align:center;}
+        th { background: #34495e; color: white; } 
+
+        .montazar-signature { position: fixed; bottom: 10px; left: 15px; background: linear-gradient(45deg, #2c3e50, #000); color: gold; padding: 8px 15px; border-radius: 20px; font-size: 12px; font-family: sans-serif; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 9999; border: 1px solid #444; font-weight: bold; letter-spacing: 1px; }
+
+        #tableArea table tbody td:first-child, .category-table tbody tr:not(:last-child) td:first-child { background-color: #2c3e50; color: #ffffff; font-weight: bold; border-bottom: 1px solid #34495e; }
+        .category-table thead th, .category-table tbody tr:not(:last-child) td:first-child { background-color: var(--summary-light) !important; color: #000 !important; border: 1px solid #5dade2; }
+
+        .top-buttons { display: flex; gap: 10px; margin-bottom:15px; flex-wrap: wrap; align-items: center;}
+        .meal-selector { background: var(--purple); color: white; font-weight: bold; }
+        .btn-backup { background: var(--backup); border: 1px solid #999; }
+        
+        #captureArea { background: white; padding: 20px; border: 1px solid #ccc; border-radius:10px; color: black; position: relative; }
+        
+        .summary-box { margin-top: 20px; border: 2px solid #34495e; border-radius: 8px; padding: 15px; background-color: #f9f9f9; display: flex; justify-content: space-around; align-items: center; }
+        .summary-item { text-align: center; font-size: 18px; font-weight: bold; color: #2c3e50; }
+        .summary-value { display: block; font-size: 24px; color: #c0392b; margin-top: 5px; }
+
+        .signatures-section { margin-top: 50px; display: flex; justify-content: space-between; padding: 0 20px; }
+        .sign-box { text-align: center; width: 30%; }
+        .sign-title { font-weight: bold; margin-bottom: 40px; font-size: 16px; } 
+        .sign-name { border-top: 1px solid #000; padding-top: 5px; font-weight: bold; font-size: 14px; min-height: 20px; }
+        
+        .editing-row { background-color: #ffeb3b !important; color: black !important; border: 2px solid red; }
+        .category-table { margin-bottom: 20px; border: 2px solid #2c3e50; border-radius: 8px; overflow: hidden; }
+        .category-table td { font-weight: bold; }
+
+        #lockMessage { background-color: #fdedec; color: #c0392b; border: 1px solid #c0392b; padding: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 15px; display: none; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        #calcModal, #compareModal, #trashModal, #adminSummaryModal, #adminPasswordScreen, #rejectReasonModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 900px; height: auto; max-height: 95vh; overflow-y: auto; }
+        
+        .comp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 15px; }
+        .comp-card { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); position: relative; overflow: hidden; transition: transform 0.2s; }
+        .comp-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .comp-header { font-weight: bold; font-size: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; color: #2c3e50; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+        .comp-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 14px; }
+        .comp-val { font-weight: bold; color: #000; }
+        .comp-diff { font-size: 13px; font-weight: bold; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 5px;}
+        .diff-up { color: #27ae60; background: #eafaf1; } 
+        .diff-down { color: #c0392b; background: #fdedec; } 
+        .diff-same { color: #7f8c8d; background: #f4f6f7; }
+
+        .comp-main-summary { background: linear-gradient(135deg, #2c3e50, #34495e); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; text-align: center; }
+        .main-stat-row { display: flex; justify-content: space-around; margin-top: 10px; }
+        .main-stat-item { text-align: center; }
+        .main-stat-val { font-size: 22px; font-weight: bold; color: #f1c40f; display: block;}
+        .main-stat-label { font-size: 12px; opacity: 0.8; }
+
+        .trash-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .trash-table th, .trash-table td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 14px; }
+        .trash-table th { background-color: #c0392b; color: white; }
+        .btn-restore { background-color: #27ae60; color: white; padding: 5px 10px; border-radius: 5px; border: none; font-size: 12px; }
+        .btn-delete-forever { background-color: #c0392b; color: white; padding: 5px 10px; border-radius: 5px; border: none; font-size: 12px; }
+
+        .calculator { background: var(--calc-bg); padding: 25px; border-radius: 20px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 5px solid #444; direction: ltr; }
+        .calc-display { background: #aab7b8; color: #000; font-family: 'Courier New', Courier, monospace; font-size: 40px; text-align: right; padding: 15px; margin-bottom: 20px; border-radius: 10px; border: 3px solid #777; font-weight: bold; min-height: 50px; overflow: hidden; white-space: nowrap; }
+        .calc-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .calc-btn { background: var(--calc-btn); color: var(--calc-text); font-size: 24px; border: none; padding: 20px; border-radius: 10px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 0 #000; }
+        .calc-btn:active { transform: translateY(4px); box-shadow: none; }
+        .calc-btn.accent { background: var(--calc-accent); color: #fff; }
+        .calc-btn.clear { background: #c0392b; }
+        .calc-btn.equal { background: #27ae60; grid-column: span 2; }
+        .close-calc { background: transparent; color: #fff; font-size: 20px; border:none; float: right; cursor: pointer; margin-bottom: 10px; }
+
+        @media print { .no-print {display:none !important;} }
+        
+        .fullscreen-overlay { display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f4f4f4; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; }
+        .login-card { background-color: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); width: 90%; max-width: 500px; border-top: 5px solid #1a5276; text-align: center; }
+        .login-card h2 { color: #333; margin-bottom: 25px; border:none; }
+        .role-btn { display: block; width: 100%; padding: 15px; margin-bottom: 15px; font-size: 18px; border-radius: 10px; }
+        
+        #mainAppContainer, #adminAppContainer, #loginScreen, #roleScreen, #deviceScreen { display:none; } 
+
+        .dark-mode table { background: var(--card-bg); color: var(--text-color); }
+        .dark-mode th { background: #1a252f; color: #ecf0f1; border-color: #555; }
+        .dark-mode td { border-color: #555; }
+        .dark-mode #captureArea { background: var(--card-bg); color: var(--text-color); border-color: #444; }
+        .dark-mode .summary-box { background-color: rgba(0,0,0,0.2); border-color: #5dade2; }
+        .dark-mode .summary-item { color: var(--text-color); }
+        .dark-mode .summary-value { color: #e74c3c; }
+        .dark-mode .comp-card, .dark-mode .modal-content, .dark-mode .login-card { background: var(--card-bg); color: var(--text-color); border-color: #555; }
+        .dark-mode .fullscreen-overlay { background-color: var(--bg-color); }
+        .dark-mode .login-card h2 { color: var(--text-color); }
+        .dark-mode input, .dark-mode select { background: #34495e; color: #ecf0f1; border-color: #555; }
+        .dark-mode .category-table thead th, .dark-mode .category-table tbody tr:not(:last-child) td:first-child { background-color: #2c3e50 !important; color: #ecf0f1 !important; border-color: #555; }
+        .dark-mode .comp-val { color: #ecf0f1; }
+        .dark-mode .comp-header { color: #ecf0f1; border-bottom-color: #555; }
+        .dark-mode #headerPrint div, .dark-mode #adminSummaryContent div { border-bottom-color: var(--text-color) !important; color: var(--text-color) !important; }
+        .dark-mode #headerPrint h2, .dark-mode #headerPrint h3 { color: var(--text-color) !important; }
+        .dark-mode #tableArea table tbody tr[style] { background-color: transparent !important; }
+        .dark-mode #tableArea table tbody tr:nth-child(even) { background-color: rgba(255,255,255,0.05) !important; }
+        .dark-mode #tableArea table tbody tr:nth-child(odd) { background-color: rgba(255,255,255,0.02) !important; }
+        .dark-mode #finalSummary { color: var(--text-color); }
+        .dark-mode .sign-name { border-top-color: var(--text-color); }
+        .dark-mode .category-table { border-color: #555; }
+
+        .mobile-view body { padding: 10px; }
+        .mobile-view .top-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .mobile-view .top-buttons select, .mobile-view .top-buttons div[style*="border-right"] { grid-column: span 2; width: 100%; margin: 0; box-sizing: border-box; }
+        .mobile-view .top-buttons div[style*="border-right"] { height: 1px; border-right: none !important; border-bottom: 2px solid #ccc; margin: 10px 0; }
+        .mobile-view .top-buttons button { grid-column: span 1; font-size: 13px; padding: 10px; width: 100%; margin: 0; box-sizing: border-box; }
+        .mobile-view .top-buttons #btnToggleAll, .mobile-view .top-buttons #btnSendToAdmin, .mobile-view .top-buttons button[onclick="openSummaryMode()"], .mobile-view .top-buttons button[onclick="toggleCompareModal()"], .mobile-view .top-buttons button[onclick="toggleTrashModal()"], .mobile-view .top-buttons button[onclick="toggleCalculator()"] { grid-column: span 2; }
+        .mobile-view .form-row { flex-direction: column; align-items: stretch; }
+        .mobile-view .form-row div { width: 100%; }
+        .mobile-view .form-row input, .mobile-view .form-row select { width: 100%; box-sizing: border-box; }
+        .mobile-view #tableArea { overflow-x: auto; display: block; width: 100%; }
+        .mobile-view table { font-size: 13px; min-width: 600px; }
+        .mobile-view .summary-box { flex-direction: column; gap: 15px; }
+        .mobile-view .signatures-section { flex-direction: column; gap: 20px; text-align: center; }
+        .mobile-view .sign-box { width: 100%; }
+
+        .rejection-alert { display:none; background-color: #fdedec; color: #c0392b; border: 2px solid #c0392b; padding: 15px; border-radius: 8px; margin-bottom: 15px; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .rejection-alert h3 { margin-top: 0; color: #c0392b; border:none; font-size: 18px; margin-bottom: 5px;}
+        .rejection-alert p { margin: 0; font-weight: bold; font-size: 15px; }
+        .close-alert { position: absolute; left: 10px; top: 10px; background: transparent; color: #c0392b; border: none; font-size: 18px; font-weight: bold; cursor: pointer; }
+        .dark-mode .rejection-alert { background-color: rgba(192, 57, 43, 0.1); border-color: #e74c3c; color: #ffcccc; }
+        .dark-mode .rejection-alert h3, .dark-mode .close-alert { color: #e74c3c; }
+
+        /* ==================== ستايلات الدردشة ==================== */
+        #chatFloatingBtn { transition: transform 0.2s; position:fixed; bottom:30px; left:30px; background:var(--primary); color:white; width:60px; height:60px; border-radius:50%; text-align:center; line-height:60px; font-size:30px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.4); z-index:9999; border:2px solid white; display:none; }
+        #chatFloatingBtn:hover { transform: scale(1.1); }
+        #chatBadge { display:none; position:absolute; top:-5px; right:-5px; background:#e74c3c; color:white; font-size:12px; font-weight:bold; border-radius:50%; min-width:20px; height:20px; line-height:20px; text-align:center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); border:2px solid white; }
+        .chat-msg-box { max-width: 80%; padding: 10px 15px; border-radius: 15px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative; }
+        .chat-msg-me { align-self: flex-start; background: #dcf8c6; border-bottom-right-radius: 2px; }
+        .chat-msg-other { align-self: flex-end; background: #ffffff; border-bottom-left-radius: 2px; }
+        .chat-sender-name { font-size: 11px; color: #1a5276; margin-bottom: 3px; font-weight: bold; }
+        .chat-text { font-size: 14px; color: #000; word-wrap: break-word; line-height: 1.4; }
+        .chat-image { max-width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-top: 5px; cursor: pointer; border: 1px solid #ccc; }
+        .chat-time { font-size: 10px; color: #888; text-align: left; margin-top: 5px; }
+        .dark-mode #chatWidget { background: #2c3e50; border-color: #34495e; }
+        .dark-mode #chatMessages { background: #1a1a1a; }
+        .dark-mode .chat-msg-other { background: #34495e; color: white; }
+        .dark-mode .chat-msg-other .chat-text { color: white; }
+        .dark-mode .chat-msg-me { background: #1e8449; }
+        .dark-mode .chat-msg-me .chat-text { color: white; }
+        .dark-mode .chat-sender-name { color: #f1c40f; }
+        .dark-mode .chat-time { color: #ccc; }
+        .dark-mode #adminChatSelector, .dark-mode #chatInputArea { background: #2c3e50; border-color: #555; }
+        .online-dot { color: #2ecc71; font-size: 10px; margin-right: 5px; }
+        .offline-dot { color: #95a5a6; font-size: 10px; margin-right: 5px; }
+    </style>
+</head>
+<body>
+
+<div id="roleScreen" class="fullscreen-overlay" style="display: flex;">
+    <div class="login-card">
+        <h2>اختر واجهة الدخول</h2>
+        <button class="role-btn" onclick="showAdminLogin()" style="background: var(--dark);">شعبة الترحيل (الإدارة)</button>
+        <button class="role-btn" onclick="showDeviceSelection()" style="background: var(--primary);">موظف ترحيل المراكز</button>
+    </div>
+</div>
+
+<div id="adminPasswordScreen" class="fullscreen-overlay">
+    <div class="login-card">
+        <h2 style="color: var(--danger);">قفل الأمان - شعبة الترحيل</h2>
+        <div style="text-align: right;">
+            <label>كلمة المرور الإدارية</label>
+            <input type="password" id="admin_pass_input" placeholder="أدخل كلمة المرور" style="width:100%; margin-bottom:15px; box-sizing:border-box; text-align:center; font-size:18px; letter-spacing:5px; outline: none; border: 1px solid #ccc;">
+        </div>
+        <button onclick="verifyAdminPassword()" style="width:100%; background:var(--danger); font-size:16px;">تسجيل الدخول</button>
+        <button onclick="backToRole()" style="width:100%; margin-top:10px; background:#7f8c8d; font-size:16px;">رجوع</button>
+    </div>
+</div>
+
+<div id="deviceScreen" class="fullscreen-overlay">
+    <div class="login-card">
+        <h2>من أين تقوم بتسجيل الدخول؟</h2>
+        <button class="role-btn" onclick="selectDevice('desktop')" style="background: var(--secondary);">💻 كمبيوتر (لابتوب)</button>
+        <button class="role-btn" onclick="selectDevice('mobile')" style="background: var(--purple);">📱 هاتف محمول</button>
+        <button onclick="backToRole()" style="width:100%; margin-top:10px; background:#7f8c8d; padding:12px; border-radius:8px; color:white; border:none; font-weight:bold;">رجوع</button>
+    </div>
+</div>
+
+<div id="loginScreen" class="fullscreen-overlay">
+    <div class="login-card" style="text-align: right;">
+        <h2 style="text-align: center;">إعدادات مركز الجباية</h2>
+        <div>
+            <label>اسم مركز الجباية</label>
+            <select id="login_center_name">
+                <option value="" disabled selected>-- اختر المركز --</option>
+                <option value="السلام">السلام</option>
+                <option value="الاسود">الاسود</option>
+                <option value="هبهب">هبهب</option>
+                <option value="جديدة الشط">جديدة الشط</option>
+                <option value="سيف سعد">سيف سعد</option>
+                <option value="منصورية الشط">منصورية الشط</option>
+                <option value="الحويش">الحويش</option>
+                <option value="الناي">الناي</option>
+                <option value="بعقوبة الجديدة">بعقوبة الجديدة</option>
+                <option value="الكاطون">الكاطون</option>
+                <option value="حجي سهيل">حجي سهيل</option>
+                <option value="المقدادية">المقدادية</option>
+                <option value="ابي صيدا">ابي صيدا</option>
+                <option value="الوجيهية">الوجيهية</option>
+                <option value="الخالص">الخالص</option>
+                <option value="اطراف الخالص">اطراف الخالص</option>
+                <option value="الزركانية">الزركانية</option>
+                <option value="المنصورية">المنصورية</option>
+                <option value="قزانية">قزانية</option>
+                <option value="مندلي">مندلي</option>
+                <option value="بهرز">بهرز</option>
+                <option value="اطراف بهرز">اطراف بهرز</option>
+                <option value="السندية">السندية</option>
+                <option value="كنعان">كنعان</option>
+                <option value="بلدروز">بلدروز</option>
+                <option value="العبارة">العبارة</option>
+                <option value="شركة ارض الافراح">شركة ارض الافراح</option>
+                <option value="سعدية الشط">سعدية الشط</option>
+                <option value="بني سعد">بني سعد</option>
+            </select>
+        </div>
+        <div><label>مسؤول ترحيل النقد</label><input type="text" id="login_transfer" placeholder="الاسم"></div>
+        <div><label>مسؤول الصندوق</label><input type="text" id="login_fund" placeholder="الاسم"></div>
+        <div><label>مسؤول المركز</label><input type="text" id="login_manager" placeholder="الاسم"></div>
+        <button id="btnLogin" onclick="enterSystem()" style="width:100%; margin-top:15px; background:var(--primary);">دخول للبرنامج</button>
+        <button onclick="backToDevice()" style="width:100%; margin-top:10px; background:#7f8c8d;">رجوع</button>
+    </div>
+</div>
+
+<div id="adminAppContainer">
+    <div style="text-align: left;" class="no-print">
+        <button onclick="toggleDarkMode()" style="background:#444">🌙 تغيير الوضع</button>
+        <button onclick="backToRole()" style="background:#c0392b">🚪 تسجيل خروج</button>
+    </div>
+    <div class="card" id="adminDashboardCard" style="text-align: center;">
+        <h2 style="color: var(--danger);">لوحة تحكم شعبة الترحيل (الخلاصات الواردة)</h2>
+        <button onclick="fetchSummaries()" style="background: var(--success); padding: 10px 20px; font-size: 16px;">🔄 تحديث البيانات</button>
+        <div style="overflow-x:auto; margin-top: 20px;">
+            <table>
+                <thead>
+                    <tr><th>المركز</th><th>الشهر والسنة</th><th>حالة الإرسال</th><th>المبلغ الكلي</th><th>الإجراء</th></tr>
+                </thead>
+                <tbody id="adminSummariesTable">
+                    <tr><td colspan="5">اضغط على تحديث البيانات لجلب الخلاصات</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="adminSummaryModal" class="no-print">
+    <div class="modal-content" style="max-width: 800px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
+            <h2 style="color:#2c3e50; margin:0;">📄 تفاصيل الخلاصة</h2>
+            <div>
+                <button onclick="saveAdminModalAsImage()" style="background:#2c3e50; padding:8px 20px; font-size:16px; margin-left: 10px;">📸 حفظ الصورة</button>
+                <button onclick="document.getElementById('adminSummaryModal').style.display='none'" style="background:#c0392b; padding:8px 20px; font-size:16px;">إغلاق ❌</button>
+            </div>
+        </div>
+        <div id="adminSummaryContent" style="background: white; color: black; padding: 20px; border-radius: 10px; border: 1px solid #ccc;"></div>
+    </div>
+</div>
+
+<div id="rejectReasonModal" class="no-print" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: center;">
+    <div class="modal-content" style="max-width: 400px; text-align: center; padding:30px;">
+        <h3 style="color: var(--danger); margin-top:0; border-bottom:none;">❌ يرجى كتابة سبب الرفض</h3>
+        <textarea id="rejectionReasonInput" placeholder="اكتب السبب هنا لكي يراه موظف المركز ويقوم بالتعديل..." style="width: 100%; height: 120px; margin-bottom: 20px; padding: 15px; box-sizing: border-box; border-radius:10px; border:2px solid #ccc; font-family: inherit; font-size:15px; resize:none;"></textarea>
+        <input type="hidden" id="rejectSummaryId">
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button onclick="confirmReject()" style="background:var(--danger); width:50%; padding:12px; font-size:16px; border-radius:10px;">تأكيد الرفض ❌</button>
+            <button onclick="document.getElementById('rejectReasonModal').style.display='none'" style="background:#7f8c8d; width:50%; padding:12px; font-size:16px; border-radius:10px;">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<div id="mainAppContainer">
+    <div class="montazar-signature no-print">Designed by Montazar 👨‍💻</div>
+    <div style="text-align: left;" class="no-print">
+        <button onclick="toggleDarkMode()" style="background:#444">🌙 تغيير الوضع</button>
+        <button onclick="backToRole()" style="background:#c0392b">🚪 خروج</button>
+    </div>
+    
+    <div id="calcModal" class="no-print">
+        <div class="calculator">
+            <button class="close-calc" onclick="toggleCalculator()">❌ (Esc)</button>
+            <div style="clear:both"></div>
+            <div class="calc-display" id="calcScreen">0</div>
+            <div class="calc-keys">
+                <button class="calc-btn clear" onclick="calcClear()">C</button>
+                <button class="calc-btn" onclick="calcDelete()">⌫</button>
+                <button class="calc-btn accent" onclick="calcAppend('/')">÷</button>
+                <button class="calc-btn accent" onclick="calcAppend('*')">×</button>
+                <button class="calc-btn" onclick="calcAppend('7')">7</button>
+                <button class="calc-btn" onclick="calcAppend('8')">8</button>
+                <button class="calc-btn" onclick="calcAppend('9')">9</button>
+                <button class="calc-btn accent" onclick="calcAppend('-')">-</button>
+                <button class="calc-btn" onclick="calcAppend('4')">4</button>
+                <button class="calc-btn" onclick="calcAppend('5')">5</button>
+                <button class="calc-btn" onclick="calcAppend('6')">6</button>
+                <button class="calc-btn accent" onclick="calcAppend('+')">+</button>
+                <button class="calc-btn" onclick="calcAppend('1')">1</button>
+                <button class="calc-btn" onclick="calcAppend('2')">2</button>
+                <button class="calc-btn" onclick="calcAppend('3')">3</button>
+                <button class="calc-btn equal" onclick="calcResult()">=</button>
+                <button class="calc-btn" onclick="calcAppend('0')">0</button>
+                <button class="calc-btn" onclick="calcAppend('00')">00</button>
+                <button class="calc-btn" onclick="calcAppend('.')">.</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="compareModal" class="no-print">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
+                <h2 style="color:#2c3e50; margin:0;">📊 تقرير المقارنة الرقمي</h2>
+                <button onclick="toggleCompareModal()" style="background:#c0392b; padding:8px 20px; font-size:16px;">إغلاق ❌</button>
+            </div>
+            <div id="comparisonContent"></div>
+        </div>
+    </div>
+
+    <div id="trashModal" class="no-print">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
+                <h2 style="color:#c0392b; margin:0;">🗑️ سلة المحذوفات (المؤقتة)</h2>
+                <button onclick="toggleTrashModal()" style="background:#555; padding:8px 20px; font-size:16px;">إغلاق ❌</button>
+            </div>
+            <p style="color:#666; font-size:14px;">ملاحظة: عند الاسترجاع، سيعود السجل إلى نفس مكانه الأصلي في الجدول.</p>
+            <div style="overflow-x:auto;">
+                <table class="trash-table">
+                    <thead><tr><th>الاسم</th><th>المبلغ</th><th>الأصل (شهر/وجبة)</th><th>التسلسل الأصلي</th><th>الإجراءات</th></tr></thead>
+                    <tbody id="trashBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainApp">
+        <div id="userInfoDisplay" class="card" style="font-weight:bold; color:var(--primary); text-align:center; font-size:1.2em;"></div>
+        
+        <div id="rejectionAlert" class="rejection-alert no-print">
+            <button class="close-alert" onclick="this.parentElement.style.display='none'">❌</button>
+            <h3>⚠️ تم رفض الخلاصة من قبل شعبة الترحيل</h3>
+            <p id="rejectionReasonText"></p>
+        </div>
+
+        <div id="lockMessage" class="no-print">🔒 هذا الشهر تم توديعه ولا يمكن التعديل عليه او الاضافه</div>
+
+        <div id="inputCard" class="card no-print">
+            <h3 id="mealInputTitle">➕ إدخال بيانات (الخلاصة اليومية)</h3>
+            <div class="form-row">
+                <div><label>اسم العداد</label><input id="meterName" type="text"></div>
+                <div><label>عدد الحركات</label><input id="vouchers" type="number"></div>
+                <div><label>المبلغ</label><input id="amount" type="number"></div>
+                
+                <div><label>نوع الصنف</label>
+                    <select id="notes" style="font-weight: bold; cursor: pointer; min-width: 150px;">
+                        <option value="المنزلي">المنزلي</option>
+                        <option value="الزراعي">الزراعي</option>
+                        <option value="التجاري">التجاري</option>
+                        <option value="الصناعي">الصناعي</option>
+                        <option value="الالكتروني">الالكتروني</option>
+                        <option value="تجاوز">تجاوز</option>
+                    </select>
+                </div>
+                
+                <button id="btnSave" onclick="saveItem()" class="btn-save">حفظ وإضافة (Enter)</button>
+            </div>
+        </div>
+
+        <div class="top-buttons no-print">
+            <select id="filterMonth" onchange="showData()"></select>
+            <select id="filterYear" onchange="showData()">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+            </select>
+            <select id="mealSelect" class="meal-selector" onchange="updateMealUI()">
+                <option value="1">الوجبة 1</option>
+                <option value="2">الوجبة 2</option>
+                <option value="3">الوجبة 3</option>
+                <option value="4">الوجبة 4</option>
+                <option value="5">الوجبة 5</option>
+                <option value="6">الوجبة 6</option>
+                <option value="7">الوجبة 7</option>
+                <option value="8">الوجبة 8</option>
+                <option value="9">الوجبة 9</option>
+                <option value="10">الوجبة 10</option>
+                <option value="11">الوجبة 11</option>
+                <option value="12">الوجبة 12</option>
+                <option value="13">الوجبة 13</option>
+                <option value="14">الوجبة 14</option>
+                <option value="15">الوجبة 15</option>
+                <option value="16">الوجبة 16</option>
+                <option value="17">الوجبة 17</option>
+                <option value="18">الوجبة 18</option>
+                <option value="19">الوجبة 19</option>
+                <option value="20">الوجبة 20</option>
+            </select>
+
+            <button id="btnToggleAll" onclick="toggleAllMeals()" style="background: linear-gradient(45deg, #2c3e50, #4ca1af); border:2px solid #fff;">📑 تجميع ودمج الوجبات</button>
+            <button onclick="openSummaryMode()" style="background: #8e44ad; border: 2px solid #fff;">⭐ الخلاصة التفصيلية</button>
+            <button onclick="toggleCompareModal()" style="background: #e67e22; border: 2px solid #fff;">📊 مقارنة الشهر</button>
+            <button onclick="toggleTrashModal()" style="background: #c0392b; border: 2px solid #fff;">🗑️ سلة المحذوفات</button>
+            <button onclick="toggleCalculator()" style="background: #34495e; border: 2px solid #f39c12;">🧮 الآلة الحاسبة</button>
+            
+            <button id="btnSendToAdmin" onclick="sendSummaryToAdmin()" style="display:none; background: #e74c3c; border: 2px solid #fff; font-size:15px; box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);">📤 إرسال لشعبة الترحيل</button>
+            
+            <div style="border-right: 2px solid #ccc; margin: 0 5px; height:30px;"></div>
+            
+            <button onclick="exportToPDF()" style="background:#e74c3c;">📄 تصدير PDF</button>
+            <button onclick="saveAsImage()" style="background:#2c3e50;">📸 صورة</button>
+            <button onclick="exportToExcel()" style="background:#27ae60;">📊 Excel</button>
+            
+            <div style="border-right: 2px solid #ccc; margin: 0 5px; height:30px;"></div>
+            <button onclick="downloadBackup()" class="btn-backup">💾 حفظ نسخة</button>
+            <button onclick="document.getElementById('backupFile').click()" class="btn-backup">📂 استرجاع</button>
+            <input type="file" id="backupFile" style="display:none" onchange="restoreBackup(this)">
+        </div>
+
+        <div id="captureArea">
+            <div id="headerPrint"></div>
+            <div id="categorySummaryArea"></div>
+            <div id="tableArea"></div>
+
+            <div id="finalSummary" class="summary-box" style="display:none;">
+                <div class="summary-item">عدد الحركات الكلي<span class="summary-value" id="sumVouchers">0</span></div>
+                <div class="summary-item">المبلغ الإجمالي<span class="summary-value" id="sumAmount">0</span></div>
+            </div>
+
+            <div id="signaturesSection" class="signatures-section" style="display:none;">
+                <div class="sign-box"><div class="sign-title">مسؤول ترحيل النقد</div><div class="sign-name" id="sig_transfer"></div></div>
+                <div class="sign-box"><div class="sign-title">مسؤول الصندوق</div><div class="sign-name" id="sig_fund"></div></div>
+                <div class="sign-box"><div class="sign-title">مسؤول مركز صيانة <span id="sig_center_name_span"></span></div><div class="sign-name" id="sig_manager"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="chatFloatingBtn" class="no-print" onclick="toggleChatWindow()">
+    💬
+    <span id="chatBadge">0</span>
+</div>
+
+<div id="chatWidget" class="no-print" style="display:none; position:fixed; bottom:100px; left:30px; width:350px; height:500px; max-height:75vh; background:white; border-radius:15px; box-shadow:0 8px 30px rgba(0,0,0,0.3); z-index:9999; flex-direction:column; overflow:hidden; border:2px solid var(--primary);">
+    <div style="background:var(--primary); color:white; padding:15px; display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; flex-direction:column; line-height: 1.2;">
+            <span id="chatTitleText" style="font-weight:bold;">الدردشة المباشرة</span>
+            <span id="chatStatusText" style="font-size:11px; color:#aed6f1; font-weight:normal;">جاري التحقق من الاتصال...</span>
+        </div>
+        <button onclick="toggleChatWindow()" style="background:transparent; color:white; border:none; font-size:18px; cursor:pointer;">✖</button>
+    </div>
+    
+    <div id="adminChatSelector" style="display:none; padding:10px; background:#f4f4f4; border-bottom:1px solid #ddd;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+            <label style="font-size:12px; margin:0;">تحدث مع مركز:</label>
+            <button onclick="clearCurrentChat()" style="background:#c0392b; color:white; border:none; padding:3px 8px; border-radius:5px; font-size:11px; cursor:pointer;" title="مسح محادثة هذا المركز نهائياً">🗑️ مسح الرسائل</button>
+        </div>
+        <select id="chatCenterDropdown" onchange="switchAdminChat(this.value)" style="width:100%; padding:8px; border-radius:5px; font-weight:bold;">
+            <option value="" disabled selected>-- اختر المركز --</option>
+        </select>
+    </div>
+
+    <div id="chatMessages" style="flex:1; padding:15px; overflow-y:auto; background:#ece5dd; display:flex; flex-direction:column; gap:5px;">
+        <div style="text-align:center; color:#888; font-size:12px; margin-top:20px;">الرسائل مشفرة ومحفوظة آلياً</div>
+    </div>
+
+    <div id="chatInputArea" style="padding:10px; background:#f4f4f4; border-top:1px solid #ddd; display:flex; gap:8px; align-items:center;">
+        <button onclick="document.getElementById('chatFileInput').click()" style="background:#7f8c8d; color:white; border:none; padding:10px; border-radius:50%; cursor:pointer; font-size:16px;" title="إرسال صورة">📎</button>
+        <input type="file" id="chatFileInput" accept="image/*" style="display:none;" onchange="handleChatFileUpload(this)">
+        <input type="text" id="chatMessageInput" placeholder="اكتب رسالتك..." style="flex:1; padding:10px; border-radius:20px; border:1px solid #ccc; outline:none; font-size:14px;" onkeypress="if(event.key==='Enter') sendNewMessage()">
+        <button onclick="sendNewMessage()" style="background:var(--success); color:white; border:none; padding:10px 18px; border-radius:20px; cursor:pointer; font-weight:bold; font-size:14px;">إرسال</button>
+    </div>
+</div>
+
+<div id="imageViewerModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10000; justify-content:center; align-items:center;" class="no-print">
+    <span onclick="document.getElementById('imageViewerModal').style.display='none'" style="position:absolute; top:20px; right:30px; color:white; font-size:40px; cursor:pointer; font-weight:bold;">&times;</span>
+    <img id="viewerImageSrc" style="max-width:90%; max-height:90%; border-radius:10px; border:3px solid white;">
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, query, orderBy, doc, updateDoc, onSnapshot, serverTimestamp, where, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const firebaseConfig = { apiKey: "AIzaSyAySryid3YWw-rjDWyT4fKJvPSRxcLln2s", authDomain: "m1993m.firebaseapp.com", projectId: "m1993m", storageBucket: "m1993m.firebasestorage.app", messagingSenderId: "86727908185", appId: "1:86727908185:web:91eabe19a0357fc0238a48", measurementId: "G-Z1JT81SY9J" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.pushSummaryToFirebase = async function(summaryData) { try { document.getElementById('btnSendToAdmin').innerText = "جاري الإرسال ⏳..."; document.getElementById('btnSendToAdmin').disabled = true; await addDoc(collection(db, "summaries"), summaryData); alert("تم إرسال الخلاصة إلى شعبة الترحيل بنجاح! ✅"); document.getElementById('btnSendToAdmin').innerText = "⏳ الخلاصة قيد المراجعة"; document.getElementById('btnSendToAdmin').style.background = "var(--warning)"; document.getElementById('rejectionAlert').style.display = 'none'; } catch (error) { alert("حدث خطأ أثناء الإرسال: " + error.message); document.getElementById('btnSendToAdmin').innerText = "📤 إرسال لشعبة الترحيل"; } finally { document.getElementById('btnSendToAdmin').disabled = false; } };
+    window.fetchSummariesFromFirebase = async function() { try { const q = query(collection(db, "summaries"), orderBy("sentAt", "desc")); const querySnapshot = await getDocs(q); let results = []; querySnapshot.forEach((docSnap) => { results.push({ id: docSnap.id, ...docSnap.data() }); }); return results; } catch (error) { return []; } };
+    window.updateSummaryStatus = async function(id, status, reason) { try { const docRef = doc(db, "summaries", id); await updateDoc(docRef, { status: status, rejectionReason: reason || "" }); alert(status === 'approved' ? "تمت الموافقة على الخلاصة بنجاح ✅" : "تم رفض الخلاصة وإرسال السبب للمركز ❌"); document.getElementById('adminSummaryModal').style.display = 'none'; fetchSummaries(); } catch (error) { alert("حدث خطأ أثناء التحديث."); } };
+
+    window.sendMessageToDB = async function(content, senderRole, targetCenter, senderName, type="text") { try { await addDoc(collection(db, "messages"), { text: content, type: type, senderRole: senderRole, centerName: targetCenter, senderName: senderName, timestamp: serverTimestamp() }); } catch (e) { console.error("Error sending message: ", e); } };
+    window.listenToChatFirebase = function(centerName, callback) { const q = query(collection(db, "messages"), where("centerName", "==", centerName)); return onSnapshot(q, (snapshot) => { let msgs = []; snapshot.forEach(doc => msgs.push(doc.data())); msgs.sort((a, b) => { let t1 = a.timestamp ? a.timestamp.toMillis() : Date.now(); let t2 = b.timestamp ? b.timestamp.toMillis() : Date.now(); return t1 - t2; }); callback(msgs); }); };
+    window.listenToAllMessagesForAdmin = function(loginTimeMillis, callback) { return onSnapshot(collection(db, "messages"), (snapshot) => { snapshot.docChanges().forEach((change) => { if (change.type === "added") { let data = change.doc.data(); let msgTime = data.timestamp ? data.timestamp.toMillis() : Date.now(); if (msgTime > loginTimeMillis && data.senderRole === 'center') { callback(data); } } }); }); };
+    window.updatePresence = async function(userId) { try { await setDoc(doc(db, "presence", userId), { lastSeen: serverTimestamp(), isOnline: true }, { merge: true }); } catch (e) {} };
+    window.listenToPresence = function(targetUserId, callback) { return onSnapshot(doc(db, "presence", targetUserId), (docSnap) => { if (docSnap.exists()) callback(docSnap.data()); else callback(null); }); };
+    window.clearCenterChatDB = async function(centerName) { try { const q = query(collection(db, "messages"), where("centerName", "==", centerName)); const snap = await getDocs(q); let count = 0; snap.forEach(async (d) => { await deleteDoc(doc(db, "messages", d.id)); count++; }); if(count > 0) alert("تم مسح المحادثة بنجاح."); } catch(e) { console.error(e); } };
+</script>
+
+<script>
+    let CENTER_NAME = "غير محدد"; let FIXED_NAMES = { manager: "", fund: "", transfer: "" };
+    let chatUserRole = ""; let activeChatCenter = ""; 
+    let unsubscribeChat = null; let unsubscribePresence = null; let presenceInterval = null;
+    let adminLoginTime = 0; let unreadCenters = new Set(); let totalUnread = 0;
+
+    function hideAllScreens() { document.getElementById('roleScreen').style.display = 'none'; document.getElementById('deviceScreen').style.display = 'none'; document.getElementById('loginScreen').style.display = 'none'; document.getElementById('mainAppContainer').style.display = 'none'; document.getElementById('adminAppContainer').style.display = 'none'; document.getElementById('adminPasswordScreen').style.display = 'none'; document.getElementById('rejectReasonModal').style.display = 'none'; document.getElementById('chatFloatingBtn').style.display = 'none'; document.getElementById('chatWidget').style.display = 'none'; if(unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; } if(unsubscribePresence) { unsubscribePresence(); unsubscribePresence = null; } if(presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; } }
+    function backToRole() { hideAllScreens(); document.getElementById('roleScreen').style.display = 'flex'; }
+    function showAdminLogin() { hideAllScreens(); document.getElementById('adminPasswordScreen').style.display = 'flex'; document.getElementById('admin_pass_input').value = ''; setTimeout(() => document.getElementById('admin_pass_input').focus(), 100); }
+    
+    // حل مشكلة التجمد في حقل كلمة المرور
+    function verifyAdminPassword() { 
+        let inputEl = document.getElementById('admin_pass_input');
+        if (inputEl.value === "eng123") { 
+            hideAllScreens(); 
+            document.getElementById('adminAppContainer').style.display = 'block'; 
+            fetchSummaries(); 
+            setupAdminChat(); 
+        } else { 
+            inputEl.style.border = "2px solid red";
+            inputEl.value = "";
+            inputEl.placeholder = "خطأ! حاول مجدداً";
+            setTimeout(() => {
+                inputEl.style.border = "1px solid #ccc";
+                inputEl.focus();
+            }, 1000);
+        } 
+    }
+
+    document.getElementById('admin_pass_input').addEventListener('keydown', function(e) { if(e.key === 'Enter') verifyAdminPassword(); });
+    function showDeviceSelection() { hideAllScreens(); document.getElementById('deviceScreen').style.display = 'flex'; }
+    function backToDevice() { hideAllScreens(); document.getElementById('deviceScreen').style.display = 'flex'; }
+    function selectDevice(type) { if(type === 'mobile') document.body.classList.add('mobile-view'); else document.body.classList.remove('mobile-view'); hideAllScreens(); document.getElementById('loginScreen').style.display = 'flex'; document.getElementById('login_center_name').focus(); }
+
+    // التعديل هنا: دالة الدخول لحفظ الإعدادات في الذاكرة المحلية
+    function enterSystem() { 
+        const c = document.getElementById('login_center_name').value; 
+        const t = document.getElementById('login_transfer').value; 
+        const f = document.getElementById('login_fund').value; 
+        const m = document.getElementById('login_manager').value; 
+        if(!c || !t || !f || !m) return alert('يرجى ملء جميع الحقول'); 
+        CENTER_NAME = c; FIXED_NAMES.transfer = t; FIXED_NAMES.fund = f; FIXED_NAMES.manager = m; 
+        
+        // كود الحفظ التلقائي
+        localStorage.setItem('elect_v3_saved_login', JSON.stringify({c:c, t:t, f:f, m:m}));
+        
+        hideAllScreens(); document.getElementById('mainAppContainer').style.display = 'block'; initializeHeader(); showData(); document.getElementById('meterName').focus(); setupUserChat(); 
+    }
+
+    function openFullscreenImage(src) { document.getElementById('viewerImageSrc').src = src; document.getElementById('imageViewerModal').style.display = 'flex'; }
+    function clearCurrentChat() { if(!activeChatCenter) return alert("الرجاء اختيار مركز أولاً لكي يتم مسح محادثته."); if(confirm(`هل أنت متأكد من مسح جميع الرسائل والصور بينك وبين مركز ( ${activeChatCenter} ) ؟\n\nتنبيه: هذا الإجراء لا يمكن التراجع عنه.`)) { if(window.clearCenterChatDB) window.clearCenterChatDB(activeChatCenter); } }
+    function startPresenceRoutine(myId) { if(window.updatePresence) { window.updatePresence(myId); presenceInterval = setInterval(() => window.updatePresence(myId), 60000); } }
+    function trackTargetPresence(targetId) { if(unsubscribePresence) unsubscribePresence(); let statusEl = document.getElementById('chatStatusText'); statusEl.innerHTML = "جاري التحقق..."; if(window.listenToPresence) { unsubscribePresence = window.listenToPresence(targetId, (data) => { if(!data || !data.lastSeen) { statusEl.innerHTML = "<span class='offline-dot'>●</span> غير متصل"; return; } let lastSeenDate = data.lastSeen.toDate(); let diffMinutes = (Date.now() - lastSeenDate.getTime()) / 60000; if(diffMinutes < 2) { statusEl.innerHTML = "<span class='online-dot'>●</span> متصل الآن"; } else { statusEl.innerHTML = "<span class='offline-dot'>●</span> آخر ظهور: " + lastSeenDate.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}); } }); } }
+
+    function toggleChatWindow() { let w = document.getElementById('chatWidget'); w.style.display = w.style.display === 'flex' ? 'none' : 'flex'; if(w.style.display === 'flex') { document.getElementById('chatMessageInput').focus(); scrollChatToBottom(); if(chatUserRole === 'admin' && activeChatCenter) { unreadCenters.delete(activeChatCenter); updateAdminUnreadUI(); } } }
+    function setupUserChat() { chatUserRole = "center"; activeChatCenter = CENTER_NAME; document.getElementById('chatFloatingBtn').style.display = 'block'; document.getElementById('adminChatSelector').style.display = 'none'; document.getElementById('chatTitleText').innerText = "تواصل مع شعبة الترحيل"; startPresenceRoutine(CENTER_NAME); trackTargetPresence('admin'); startChatListener(activeChatCenter); }
+    function setupAdminChat() { chatUserRole = "admin"; adminLoginTime = Date.now(); totalUnread = 0; unreadCenters.clear(); document.getElementById('chatFloatingBtn').style.display = 'block'; document.getElementById('adminChatSelector').style.display = 'block'; document.getElementById('chatTitleText').innerText = "اختر مركزاً للبدء"; document.getElementById('chatStatusText').innerText = "جاهز للمراسلة"; let select = document.getElementById('chatCenterDropdown'); select.innerHTML = '<option value="" disabled selected>-- اختر المركز --</option>'; let originalOpts = document.getElementById('login_center_name').options; for(let i=1; i<originalOpts.length; i++) { let o = document.createElement('option'); o.value = originalOpts[i].value; o.text = originalOpts[i].value; select.appendChild(o); } startPresenceRoutine('admin'); if(window.listenToAllMessagesForAdmin) { window.listenToAllMessagesForAdmin(adminLoginTime, (msg) => { if(msg.centerName !== activeChatCenter || document.getElementById('chatWidget').style.display === 'none') { unreadCenters.add(msg.centerName); updateAdminUnreadUI(); } }); } }
+    function updateAdminUnreadUI() { let badge = document.getElementById('chatBadge'); if(unreadCenters.size > 0) { badge.style.display = 'block'; badge.innerText = unreadCenters.size; } else { badge.style.display = 'none'; } let select = document.getElementById('chatCenterDropdown'); for(let i=0; i<select.options.length; i++) { let opt = select.options[i]; let rawName = opt.value.replace(" 🔴", ""); if(unreadCenters.has(rawName)) opt.text = rawName + " 🔴"; else opt.text = rawName; } }
+    function switchAdminChat(centerName) { centerName = centerName.replace(" 🔴", ""); activeChatCenter = centerName; document.getElementById('chatTitleText').innerText = "مراسلة: " + centerName; unreadCenters.delete(centerName); updateAdminUnreadUI(); trackTargetPresence(centerName); startChatListener(centerName); }
+
+    function startChatListener(centerName) { if(unsubscribeChat) unsubscribeChat(); if(!window.listenToChatFirebase) return; unsubscribeChat = window.listenToChatFirebase(centerName, (messages) => { let box = document.getElementById('chatMessages'); box.innerHTML = ""; if(messages.length === 0) box.innerHTML = '<div style="text-align:center; color:#888; margin-top:20px; font-size:13px;">لا توجد رسائل سابقة. ابدأ المحادثة الآن!</div>'; messages.forEach(m => { let isMe = m.senderRole === chatUserRole; let cssClass = isMe ? "chat-msg-me" : "chat-msg-other"; let senderNameDisplay = isMe ? "أنت" : (m.senderRole === 'admin' ? "شعبة الترحيل (الإدارة)" : m.senderName); let timeStr = "الآن"; if(m.timestamp) timeStr = m.timestamp.toDate().toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'}); let contentHtml = ""; if(m.type === 'image') { contentHtml = `<img src="${m.text}" class="chat-image" onclick="openFullscreenImage(this.src)">`; } else { contentHtml = `<div class="chat-text">${m.text}</div>`; } box.innerHTML += `<div class="chat-msg-box ${cssClass}"><div class="chat-sender-name">${senderNameDisplay}</div>${contentHtml}<div class="chat-time">${timeStr}</div></div>`; }); scrollChatToBottom(); }); }
+    function sendNewMessage() { let input = document.getElementById('chatMessageInput'); let text = input.value.trim(); if(!text) return; if(chatUserRole === 'admin' && !activeChatCenter) return alert("يرجى اختيار مركز من القائمة العلوية أولاً!"); let senderNameDisplay = chatUserRole === 'admin' ? "الإدارة" : FIXED_NAMES.transfer; if(window.sendMessageToDB) { window.sendMessageToDB(text, chatUserRole, activeChatCenter, senderNameDisplay, 'text'); input.value = ""; scrollChatToBottom(); } }
+    function handleChatFileUpload(input) { if(chatUserRole === 'admin' && !activeChatCenter) { alert("يرجى اختيار مركز قبل إرسال الصورة!"); input.value = ''; return; } const file = input.files[0]; if(!file) return; let reader = new FileReader(); reader.onload = function(event) { let img = new Image(); img.onload = function() { let canvas = document.createElement('canvas'); let MAX_WIDTH = 1600; let MAX_HEIGHT = 1600; let width = img.width; let height = img.height; if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } canvas.width = width; canvas.height = height; let ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); let dataUrl = canvas.toDataURL('image/jpeg', 0.95); if(dataUrl.length > 1000000) { alert("عذراً، الصورة ضخمة جداً. يرجى اقتصاص حواف الصورة وإعادة إرسالها."); return; } let senderNameDisplay = chatUserRole === 'admin' ? "الإدارة" : FIXED_NAMES.transfer; window.sendMessageToDB(dataUrl, chatUserRole, activeChatCenter, senderNameDisplay, 'image'); scrollChatToBottom(); }
+    img.src = event.target.result; }; reader.readAsDataURL(file); input.value = ''; }
+    function scrollChatToBottom() { let box = document.getElementById('chatMessages'); setTimeout(() => box.scrollTop = box.scrollHeight, 100); }
+
+    function setupLoginNavigation() { const ids = ['login_center_name', 'login_transfer', 'login_fund', 'login_manager', 'btnLogin']; ids.forEach((id, index) => { const el = document.getElementById(id); if(el) { el.addEventListener('keydown', (e) => { if(e.key === 'Enter') { e.preventDefault(); if(index < ids.length - 1) document.getElementById(ids[index+1]).focus(); else el.click(); } }); } }); }
+    let records = JSON.parse(localStorage.getItem('elect_v3_data')) || {}; let trash = JSON.parse(localStorage.getItem('elect_v3_trash')) || []; let editIndex = -1, isAllMealsMode = false, isSummaryMode = false, isCalcOpen = false; const rowColors = ["#e8f8f5", "#fef9e7", "#f4ecf7", "#eafaf1", "#ebf5fb"];
+    const monthSelect = document.getElementById('filterMonth'); for(let i=1; i<=12; i++) { let opt = document.createElement('option'); opt.value = i; opt.text = "شهر " + i; if(i === new Date().getMonth()+1) opt.selected = true; monthSelect.appendChild(opt); }
+    
+    // التعديل هنا: جلب البيانات المحفوظة عند تحميل البرنامج
+    window.onload = function() { 
+        setupNavigation(); 
+        setupLoginNavigation(); 
+        
+        let savedSettings = JSON.parse(localStorage.getItem('elect_v3_saved_login'));
+        if(savedSettings) {
+            if(savedSettings.c) document.getElementById('login_center_name').value = savedSettings.c;
+            if(savedSettings.t) document.getElementById('login_transfer').value = savedSettings.t;
+            if(savedSettings.f) document.getElementById('login_fund').value = savedSettings.f;
+            if(savedSettings.m) document.getElementById('login_manager').value = savedSettings.m;
+        }
+    };
+
+    function initializeHeader() { document.getElementById('headerPrint').innerHTML = `<div style="text-align:center; border-bottom:3px double #000; padding-bottom:10px; margin-bottom:20px; color:black;"><h2 style="margin:0; color:#000;">وزارة الكهرباء - الشركة العامة لتوزيع كهرباء الوسط</h2><h3 style="margin:5px 0; color:#333; border:none;">فرع توزيع كهرباء ديالى - ${CENTER_NAME}</h3></div>`; document.getElementById('userInfoDisplay').innerText = `الموقع: ${CENTER_NAME} | المستخدم الحالي: ${FIXED_NAMES.transfer}`; document.getElementById('sig_transfer').innerText = FIXED_NAMES.transfer; document.getElementById('sig_fund').innerText = FIXED_NAMES.fund; document.getElementById('sig_manager').innerText = FIXED_NAMES.manager; document.getElementById('sig_center_name_span').innerText = CENTER_NAME; }
+    function isMonthLocked() { let sY=parseInt(document.getElementById('filterYear').value), sM=parseInt(document.getElementById('filterMonth').value), d=new Date(); return (sY<d.getFullYear() || (sY===d.getFullYear() && sM<d.getMonth()+1)); }
+    function toggleTrashModal() { const m=document.getElementById('trashModal'); m.style.display=(m.style.display==='flex')?'none':'flex'; if(m.style.display==='flex') renderTrash(); }
+    
+    // إضافة الأصناف الجديدة للحسابات
+    function getCategorySummary(month, year, targetMeals) { 
+        let stats = { official: { count: 0, amount: 0 }, agri: { count: 0, amount: 0 }, comm: { count: 0, amount: 0 }, indus: { count: 0, amount: 0 }, ele: { count: 0, amount: 0 }, taj: { count: 0, amount: 0 } }; 
+        targetMeals.forEach(m => { 
+            let mealData = records[`${month}-${year}-M${m}`] || []; 
+            mealData.forEach(item => { 
+                let v = parseFloat(item.v) || 0, a = parseFloat(item.a) || 0, note = (item.n || "").trim(); 
+                if (note.includes("زراعي")) { stats.agri.count += v; stats.agri.amount += a; } 
+                else if (note.includes("تجاري")) { stats.comm.count += v; stats.comm.amount += a; } 
+                else if (note.includes("صناعي")) { stats.indus.count += v; stats.indus.amount += a; } 
+                else if (note.includes("الكتروني") || note.includes("إلكتروني")) { stats.ele.count += v; stats.ele.amount += a; } 
+                else if (note.includes("تجاوز")) { stats.taj.count += v; stats.taj.amount += a; } 
+                else { stats.official.count += v; stats.official.amount += a; } 
+            }); 
+        }); 
+        return stats; 
+    }
+
+    function showData() {
+        let month = document.getElementById('filterMonth').value; let year = document.getElementById('filterYear').value; let locked = isMonthLocked();
+        document.getElementById('inputCard').style.display = (locked || isAllMealsMode) ? 'none' : 'block'; document.getElementById('lockMessage').style.display = locked ? 'block' : 'none'; document.getElementById('btnSendToAdmin').style.display = 'none'; document.getElementById('rejectionAlert').style.display = 'none'; document.getElementById('categorySummaryArea').innerHTML = ""; document.getElementById('tableArea').innerHTML = "";
+        
+        if (isSummaryMode) { 
+            document.getElementById('inputCard').style.display = 'none'; 
+            document.getElementById('finalSummary').style.display = 'none'; 
+            document.getElementById('signaturesSection').style.display = 'flex'; 
+            document.getElementById('btnSendToAdmin').style.display = 'inline-block'; 
+            let stats = getCategorySummary(month, year, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]); 
+            let tCount = stats.official.count + stats.agri.count + stats.comm.count + stats.indus.count + stats.ele.count + stats.taj.count; 
+            let tAmt = stats.official.amount + stats.agri.amount + stats.comm.amount + stats.indus.amount + stats.ele.amount + stats.taj.amount; 
+            document.getElementById('categorySummaryArea').innerHTML = `
+            <div style="text-align: center; margin: 20px 0; font-size: 18px; font-weight: bold; color: black; line-height: 1.6;">الخلاصة التفصيلية لترحيل النقد لمركز ${CENTER_NAME} لشهر ${month}/${year}<br> وحسب الجدول المبين تفاصيله ادناه مع.... التقدير...</div>
+            <div class="category-table">
+                <table style="margin: 0; width: 100%;">
+                    <thead>
+                        <tr><th style="width:50px;">ت</th><th>نوع النقد</th><th>عدد الحركات</th><th>المبلغ</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>المنزلي</td><td>${stats.official.count}</td><td>${stats.official.amount.toLocaleString()}</td></tr>
+                        <tr><td>2</td><td>الزراعي</td><td>${stats.agri.count}</td><td>${stats.agri.amount.toLocaleString()}</td></tr>
+                        <tr><td>3</td><td>التجاري</td><td>${stats.comm.count}</td><td>${stats.comm.amount.toLocaleString()}</td></tr>
+                        <tr><td>4</td><td>الصناعي</td><td>${stats.indus.count}</td><td>${stats.indus.amount.toLocaleString()}</td></tr>
+                        <tr><td>5</td><td>الالكتروني</td><td>${stats.ele.count}</td><td>${stats.ele.amount.toLocaleString()}</td></tr>
+                        <tr><td>6</td><td>التجاوز</td><td>${stats.taj.count}</td><td>${stats.taj.amount.toLocaleString()}</td></tr>
+                        <tr style="background: #f9e79f; font-weight: bold;"><td colspan="2" style="background:#f9e79f !important; color:#000 !important; border:1px solid #999;">المجموع الكلي</td><td style="color:#c0392b">${tCount}</td><td style="color:#c0392b">${tAmt.toLocaleString()}</td></tr>
+                    </tbody>
+                </table>
+            </div>`; 
+            if(window.fetchSummariesFromFirebase) { window.fetchSummariesFromFirebase().then(all => { let myLatest = all.find(x => x.centerName === CENTER_NAME && x.month === month && x.year === year); let alertDiv = document.getElementById('rejectionAlert'); let btn = document.getElementById('btnSendToAdmin'); if(myLatest) { if(myLatest.status === 'rejected') { document.getElementById('rejectionReasonText').innerText = "السبب: " + (myLatest.rejectionReason || "غير محدد"); alertDiv.style.display = 'block'; btn.innerText = "📤 إعادة إرسال الخلاصة (مرفوضة)"; btn.style.background = "var(--danger)"; } else if(myLatest.status === 'approved') { alertDiv.style.display = 'none'; btn.innerText = "✅ الخلاصة مقبولة من الإدارة"; btn.style.background = "var(--success)"; } else { alertDiv.style.display = 'none'; btn.innerText = "⏳ الخلاصة قيد المراجعة (إعادة إرسال؟)"; btn.style.background = "var(--warning)"; } } else { alertDiv.style.display = 'none'; btn.innerText = "📤 إرسال لشعبة الترحيل"; btn.style.background = "#e74c3c"; } }); } return; 
+        }
+        
+        document.getElementById('btnToggleAll').disabled = false; let data=[], titleText="", tv=0, ta=0;
+        if (isAllMealsMode) { let rawData = []; [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].forEach(m => { (records[`${month}-${year}-M${m}`] || []).forEach(item => rawData.push({...item, sourceMeal:`وجبة ${m}`})); }); let mergedList = []; rawData.forEach(newItem => { let existingItemIndex = mergedList.findIndex(existing => existing.m.trim().startsWith(newItem.m.trim()) || newItem.m.trim().startsWith(existing.m.trim())); if (existingItemIndex > -1) { let ex = mergedList[existingItemIndex]; if (newItem.m.length > ex.m.length) ex.m = newItem.m; ex.v += parseFloat(newItem.v)||0; ex.a += parseFloat(newItem.a)||0; if(newItem.n){ let nt=newItem.n.trim(); if((nt.includes("زراعي")||nt.includes("تجاري")||nt.includes("صناعي")||nt.includes("الكتروني")||nt.includes("إلكتروني")||nt.includes("تجاوز")||nt.includes("المنزلي")) && !ex.notesList.includes(nt)) ex.notesList.push(nt); } if(!ex.sourcesList.includes(newItem.sourceMeal)) ex.sourcesList.push(newItem.sourceMeal); } else { let n=newItem.n?newItem.n.trim():""; let initN=[]; if(n.includes("زراعي")||n.includes("تجاري")||n.includes("صناعي")||n.includes("الكتروني")||n.includes("إلكتروني")||n.includes("تجاوز")||n.includes("المنزلي")) initN.push(n); mergedList.push({ m:newItem.m, v:parseFloat(newItem.v)||0, a:parseFloat(newItem.a)||0, notesList:initN, sourcesList:[newItem.sourceMeal], d:newItem.d }); } }); data = mergedList.map(i => ({...i, n:i.notesList.length>0?i.notesList.join(" + "):"المنزلي", sourceDisplay:i.sourcesList.join(" + ")})); titleText = `المجموع الكلي - شهر ${month} لسنة ${year}`; } else { let meal = document.getElementById('mealSelect').value; data = records[`${month}-${year}-M${meal}`] || []; titleText = `سجل شهر ${month} لعام ${year} - الوجبة ${meal}`; }
+        let html = `<h3 style="color:black; text-align:center;">${titleText}</h3>`; let nH = isAllMealsMode ? "الصنف" : "نوع الصنف"; let aH = isAllMealsMode ? "المصدر" : (locked ? "الحالة" : "الإجراءات"); html += `<table><thead><tr><th>ت</th><th>اسم العداد</th><th>عدد الحركات</th><th>المبلغ</th><th>${nH}</th><th>التاريخ</th><th class="${locked?'':'del-col no-print'}">${aH}</th></tr></thead><tbody>`;
+        if(data.length>0) { data.forEach((r,i) => { tv+=r.v; ta+=r.a; let bg=rowColors[i%rowColors.length], cls=(i===editIndex&&!isAllMealsMode)?'editing-row':'', sty=cls?'':`style="background-color:${bg};"`; html+=`<tr class="${cls}" ${sty}><td>${i+1}</td><td>${r.m}</td><td>${r.v}</td><td>${r.a.toLocaleString()}</td><td>${r.n}</td><td>${r.d}</td>`; if(isAllMealsMode) html+=`<td style="font-size:13px; font-weight:bold; color:#1a5276;">${r.sourceDisplay}</td>`; else if(locked) html+=`<td style="color:#c0392b; font-weight:bold;">🔒 تـــم التوديع</td>`; else html+=`<td class="del-col no-print"><button onclick="editRecord(${i})" style="background:var(--warning); padding:3px 8px;">تعديل</button> <button onclick="deleteRecord(${i})" style="background:var(--danger); padding:3px 8px;">حذف</button></td>`; html+=`</tr>`; }); document.getElementById('finalSummary').style.display = "flex"; document.getElementById('signaturesSection').style.display = "flex"; document.getElementById('sumVouchers').innerText = tv; document.getElementById('sumAmount').innerText = ta.toLocaleString() + " د.ع"; } else { html += `<tr><td colspan="7">لا توجد بيانات</td></tr>`; document.getElementById('finalSummary').style.display = "none"; document.getElementById('signaturesSection').style.display = "none"; } document.getElementById('tableArea').innerHTML = html + `</tbody></table>`;
+    }
+
+    function sendSummaryToAdmin() { let month = document.getElementById('filterMonth').value; let year = document.getElementById('filterYear').value; let stats = getCategorySummary(month, year, [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]); let tCount = stats.official.count + stats.agri.count + stats.comm.count + stats.indus.count + stats.ele.count + stats.taj.count; let tAmt = stats.official.amount + stats.agri.amount + stats.comm.amount + stats.indus.amount + stats.ele.amount + stats.taj.amount; if(tCount === 0 && tAmt === 0) return alert("الخلاصة فارغة، لا يوجد بيانات للإرسال!"); if(!confirm(`هل أنت متأكد من إرسال خلاصة شهر ${month} إلى شعبة الترحيل؟\nالمبلغ الكلي: ${tAmt.toLocaleString()} دينار`)) return; let summaryData = { centerName: CENTER_NAME, month: month, year: year, official: stats.official, agri: stats.agri, comm: stats.comm, indus: stats.indus, ele: stats.ele, taj: stats.taj, totalCount: tCount, totalAmount: tAmt, sigTransfer: FIXED_NAMES.transfer, sigFund: FIXED_NAMES.fund, sigManager: FIXED_NAMES.manager, sentAt: new Date().toLocaleString('ar-EG'), status: 'pending', rejectionReason: '' }; if(window.pushSummaryToFirebase) window.pushSummaryToFirebase(summaryData); else alert("خدمة الإرسال غير متوفرة حالياً، انتظر قليلاً."); }
+    async function fetchSummaries() { const tbody = document.getElementById('adminSummariesTable'); tbody.innerHTML = '<tr><td colspan="5">جاري التحميل... ⏳</td></tr>'; if(!window.fetchSummariesFromFirebase) return tbody.innerHTML = '<tr><td colspan="5">خطأ في الاتصال بقاعدة البيانات</td></tr>'; const centerOptions = document.querySelectorAll('#login_center_name option'); const allCenters = []; centerOptions.forEach(opt => { if(opt.value && opt.value !== "") allCenters.push(opt.value); }); let firebaseData = await window.fetchSummariesFromFirebase(); let latestSummaries = {}; firebaseData.forEach(item => { if(!latestSummaries[item.centerName]) latestSummaries[item.centerName] = item; }); let sentList = []; let unsentList = []; allCenters.forEach(center => { if(latestSummaries[center]) sentList.push(latestSummaries[center]); else unsentList.push({ centerName: center }); }); let html = ''; sentList.forEach(item => { let strData = encodeURIComponent(JSON.stringify(item)); let statusBadge = "⏳ بانتظار المراجعة"; let statusColor = "#f39c12"; if(item.status === 'approved') { statusBadge = "✅ تمت الموافقة"; statusColor = "var(--success)"; } if(item.status === 'rejected') { statusBadge = "❌ مرفوضة"; statusColor = "var(--danger)"; } html += `<tr><td style="font-weight:bold; color:var(--primary);">${item.centerName}</td><td>${item.month} / ${item.year}</td><td style="direction:ltr;"><span style="color:${statusColor}; font-weight:bold;">${statusBadge}</span><br><span style="font-size:12px; color:#666;">${item.sentAt}</span></td><td style="color:var(--danger); font-weight:bold;">${item.totalAmount.toLocaleString()} د.ع</td><td><button onclick="viewAdminSummary('${strData}')" style="background:#8e44ad; padding:5px 15px;">عرض التفاصيل 👁️</button></td></tr>`; }); unsentList.forEach(item => { html += `<tr style="background-color: rgba(231, 76, 60, 0.05);"><td style="font-weight:bold; color:#7f8c8d;">${item.centerName}</td><td style="color:#95a5a6;">--</td><td><span style="color:#c0392b; font-weight:bold;">❌ غير مرسلة</span></td><td style="color:#95a5a6;">0 د.ع</td><td><button disabled style="background:#bdc3c7; padding:5px 15px; cursor:not-allowed; border:none; color:white; border-radius:8px;">لا يوجد بيانات</button></td></tr>`; }); if(html === '') html = '<tr><td colspan="5">لا توجد مراكز لعرضها</td></tr>'; tbody.innerHTML = html; }
+    
+    // تعديل عرض الإدارة ليشمل الأصناف الجديدة
+    function viewAdminSummary(strData) { 
+        let item = JSON.parse(decodeURIComponent(strData)); 
+        let html = `<div style="text-align:center; border-bottom:3px double #000; padding-bottom:10px; margin-bottom:20px; color:black;"><h2 style="margin:0; color:#000;">وزارة الكهرباء - الشركة العامة لتوزيع كهرباء الوسط</h2><h3 style="margin:5px 0; color:#333; border:none;">فرع توزيع كهرباء ديالى - ${item.centerName}</h3></div><div style="text-align: center; margin: 20px 0; font-size: 18px; font-weight: bold; color: black; line-height: 1.6;">الخلاصة التفصيلية لترحيل النقد لمركز ${item.centerName} لشهر ${item.month}/${item.year}<br> وحسب الجدول المبين تفاصيله ادناه مع.... التقدير...</div>
+        <div class="category-table"><table style="margin: 0; width: 100%;"><thead><tr><th style="width:50px; background:#34495e; color:white;">ت</th><th style="background:#34495e; color:white;">نوع النقد</th><th style="background:#34495e; color:white;">عدد الحركات</th><th style="background:#34495e; color:white;">المبلغ</th></tr></thead><tbody>
+        <tr><td>1</td><td>المنزلي</td><td>${item.official.count}</td><td>${item.official.amount.toLocaleString()}</td></tr>
+        <tr><td>2</td><td>الزراعي</td><td>${item.agri.count}</td><td>${item.agri.amount.toLocaleString()}</td></tr>
+        <tr><td>3</td><td>التجاري</td><td>${item.comm.count}</td><td>${item.comm.amount.toLocaleString()}</td></tr>
+        <tr><td>4</td><td>الصناعي</td><td>${item.indus ? item.indus.count : 0}</td><td>${(item.indus ? item.indus.amount : 0).toLocaleString()}</td></tr>
+        <tr><td>5</td><td>الالكتروني</td><td>${item.ele ? item.ele.count : 0}</td><td>${(item.ele ? item.ele.amount : 0).toLocaleString()}</td></tr>
+        <tr><td>6</td><td>التجاوز</td><td>${item.taj ? item.taj.count : 0}</td><td>${(item.taj ? item.taj.amount : 0).toLocaleString()}</td></tr>
+        <tr style="background: #f9e79f; font-weight: bold;"><td colspan="2" style="background:#f9e79f !important; color:#000 !important; border:1px solid #999;">المجموع الكلي</td><td style="color:#c0392b">${item.totalCount}</td><td style="color:#c0392b">${item.totalAmount.toLocaleString()}</td></tr></tbody></table></div>
+        <div class="signatures-section" style="display:flex;"><div class="sign-box"><div class="sign-title">مسؤول ترحيل النقد</div><div class="sign-name">${item.sigTransfer}</div></div><div class="sign-box"><div class="sign-title">مسؤول الصندوق</div><div class="sign-name">${item.sigFund}</div></div><div class="sign-box"><div class="sign-title">مسؤول مركز صيانة ${item.centerName}</div><div class="sign-name">${item.sigManager}</div></div></div>`; 
+        let currentStatusText = ""; if(item.status === 'approved') currentStatusText = "<div style='color:green; font-weight:bold; margin-bottom:10px;'>الخلاصة مقبولة حالياً ✅</div>"; else if(item.status === 'rejected') currentStatusText = `<div style='color:red; font-weight:bold; margin-bottom:10px;'>الخلاصة مرفوضة حالياً ❌ (السبب: ${item.rejectionReason})</div>`; else currentStatusText = "<div style='color:#f39c12; font-weight:bold; margin-bottom:10px;'>الخلاصة قيد المراجعة ⏳</div>"; let actionButtons = `<div id="adminActionButtons" style="text-align:center; margin-top:20px; border-top:2px solid #ccc; padding-top:15px;" class="no-print">${currentStatusText}<button onclick="approveSummary('${item.id}')" style="background:var(--success); padding:10px 20px; font-size:16px; margin:5px; border-radius:8px;">✅ قبول الخلاصة</button><button onclick="rejectSummary('${item.id}')" style="background:var(--danger); padding:10px 20px; font-size:16px; margin:5px; border-radius:8px;">❌ رفض الخلاصة</button></div>`; document.getElementById('adminSummaryContent').innerHTML = html + actionButtons; document.getElementById('adminSummaryModal').style.display = 'flex'; 
+    }
+    
+    function approveSummary(id) { if(confirm("هل أنت متأكد من قبول هذه الخلاصة؟")) window.updateSummaryStatus(id, 'approved', ''); }
+    function rejectSummary(id) { document.getElementById('rejectSummaryId').value = id; document.getElementById('rejectionReasonInput').value = ''; document.getElementById('rejectReasonModal').style.display = 'flex'; setTimeout(() => document.getElementById('rejectionReasonInput').focus(), 100); }
+    function confirmReject() { let reason = document.getElementById('rejectionReasonInput').value; let id = document.getElementById('rejectSummaryId').value; if(reason.trim() !== "") { document.getElementById('rejectReasonModal').style.display = 'none'; window.updateSummaryStatus(id, 'rejected', reason.trim()); } else alert("يجب كتابة سبب للرفض لكي يراه الموظف!"); }
+    
+    function saveAdminModalAsImage() { 
+        const content = document.getElementById('adminSummaryContent'); const actionBtns = document.getElementById('adminActionButtons'); 
+        if (!content) return; if(actionBtns) actionBtns.style.display = 'none'; 
+        let wasDarkMode = document.body.classList.contains('dark-mode'); if(wasDarkMode) document.body.classList.remove('dark-mode'); 
+        let oldBg = content.style.backgroundColor; content.style.backgroundColor = '#ffffff'; 
+        setTimeout(() => { 
+            html2canvas(content, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => { 
+                var link = document.createElement('a'); link.download = `الخلاصة_المرسلة.png`; link.href = canvas.toDataURL('image/png'); link.click(); 
+                content.style.backgroundColor = oldBg; if(wasDarkMode) document.body.classList.add('dark-mode'); if(actionBtns) actionBtns.style.display = 'block'; 
+            }).catch(function (error) { 
+                alert("حدث خطأ أثناء حفظ الصورة."); 
+                content.style.backgroundColor = oldBg; if(wasDarkMode) document.body.classList.add('dark-mode'); if(actionBtns) actionBtns.style.display = 'block'; 
+            }); 
+        }, 300); 
+    }
+
+    function saveAsImage() { 
+        const n=document.getElementById('captureArea'); const dCols=document.querySelectorAll('.del-col'); const rAlert=document.getElementById('rejectionAlert'); 
+        let rAlertDisplay = rAlert.style.display; rAlert.style.display = 'none'; dCols.forEach(c=>c.style.display='none'); 
+        let wasD=document.body.classList.contains('dark-mode'); let wasMobile=document.body.classList.contains('mobile-view'); 
+        if(wasD) document.body.classList.remove('dark-mode'); if(wasMobile) document.body.classList.remove('mobile-view'); 
+        let fn=isAllMealsMode?`المجموع_الكلي_${CENTER_NAME}.png`:`تقرير_${CENTER_NAME}.png`; 
+        html2canvas(n, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => { 
+            let a=document.createElement('a'); a.download=fn; a.href=canvas.toDataURL('image/png'); a.click(); 
+            if(!isAllMealsMode) dCols.forEach(c=>c.style.display=''); rAlert.style.display = rAlertDisplay; 
+            if(wasD) document.body.classList.add('dark-mode'); if(wasMobile) document.body.classList.remove('mobile-view'); 
+        }).catch(e=>{ 
+            alert("خطأ في حفظ الصورة."); 
+            if(!isAllMealsMode) dCols.forEach(c=>c.style.display=''); rAlert.style.display = rAlertDisplay; 
+            if(wasD) document.body.classList.add('dark-mode'); if(wasMobile) document.body.classList.remove('mobile-view'); 
+        }); 
+    }
+
+    function renderComparisonView() { const content = document.getElementById('comparisonContent'); let m = parseInt(document.getElementById('filterMonth').value); let y = parseInt(document.getElementById('filterYear').value); let prevM = m - 1; let prevY = y; if(prevM === 0) { prevM = 12; prevY = y - 1; } function getStats(month, year) { let v = 0, a = 0; [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].forEach(meal => { (records[`${month}-${year}-M${meal}`] || []).forEach(i => { v += parseFloat(i.v) || 0; a += parseFloat(i.a) || 0; }); }); return {v, a}; } let curr = getStats(m, y); let prev = getStats(prevM, prevY); let diffA = curr.a - prev.a; let diffV = curr.v - prev.v; let clsA = diffA > 0 ? 'diff-up' : (diffA < 0 ? 'diff-down' : 'diff-same'); let clsV = diffV > 0 ? 'diff-up' : (diffV < 0 ? 'diff-down' : 'diff-same'); let txtA = diffA > 0 ? `+${diffA.toLocaleString()}` : diffA.toLocaleString(); let txtV = diffV > 0 ? `+${diffV}` : diffV; content.innerHTML = `<div class="comp-main-summary"><h3 style="margin-top:0; border:none; color:white;">مقارنة شهر ${m} مع شهر ${prevM} لعام ${y}</h3><div class="main-stat-row"><div class="main-stat-item"><span class="main-stat-label">الشهر الحالي</span><span class="main-stat-val">${curr.a.toLocaleString()}</span></div><div class="main-stat-item"><span class="main-stat-label">الشهر السابق</span><span class="main-stat-val">${prev.a.toLocaleString()}</span></div></div></div><div class="comp-grid"><div class="comp-card"><div class="comp-header">💰 الإيرادات (المبلغ)</div><div class="comp-row"><span>الحالي:</span> <span class="comp-val">${curr.a.toLocaleString()}</span></div><div class="comp-row"><span>السابق:</span> <span class="comp-val">${prev.a.toLocaleString()}</span></div><div class="comp-diff ${clsA}" style="direction:ltr;">${txtA} :الفرق</div></div><div class="comp-card"><div class="comp-header">📄 عدد الحركات</div><div class="comp-row"><span>الحالي:</span> <span class="comp-val">${curr.v}</span></div><div class="comp-row"><span>السابق:</span> <span class="comp-val">${prev.v}</span></div><div class="comp-diff ${clsV}" style="direction:ltr;">${txtV} :الفرق</div></div></div>`; }
+    function openSummaryMode() { isSummaryMode=true; isAllMealsMode=false; document.getElementById('mealSelect').disabled=false; let btn=document.getElementById('btnToggleAll'); btn.innerText="📑 تجميع ودمج الوجبات"; btn.style.background="linear-gradient(45deg, #2c3e50, #4ca1af)"; showData(); }
+    function toggleAllMeals() { if(isSummaryMode){isSummaryMode=false; isAllMealsMode=true;} else{isAllMealsMode=!isAllMealsMode;} let b=document.getElementById('btnToggleAll'), ms=document.getElementById('mealSelect'), ic=document.getElementById('inputCard'); if(isAllMealsMode){b.innerText="↩️ عودة للوجبات المفردة"; b.style.background="#555"; ms.disabled=true; ic.style.display="none";}else{b.innerText="📑 تجميع ودمج الوجبات"; b.style.background="linear-gradient(45deg, #2c3e50, #4ca1af)"; ms.disabled=false; if(!isMonthLocked()) ic.style.display="block";} showData(); }
+    function updateMealUI() { isSummaryMode=false; editIndex=-1; document.getElementById('mealInputTitle').innerText=`➕ إدخال بيانات (الوجبة ${document.getElementById('mealSelect').value})`; showData(); }
+    function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
+    function saveItem() { if(isMonthLocked()) return alert("هذا الشهر تم توديعه ولا يمكن التعديل عليه."); let m=document.getElementById('meterName').value.trim(), v=parseFloat(document.getElementById('vouchers').value)||0, a=parseFloat(document.getElementById('amount').value)||0, n=document.getElementById('notes').value||"-", key=`${document.getElementById('filterMonth').value}-${document.getElementById('filterYear').value}-M${document.getElementById('mealSelect').value}`; if(!m||v<=0) return alert("أدخل البيانات بشكل صحيح"); if(!records[key]) records[key]=[]; if(editIndex>-1) { records[key][editIndex]={m,v,a,n,d:records[key][editIndex].d}; editIndex=-1; document.getElementById('btnSave').innerText="حفظ وإضافة (Enter)"; document.getElementById('btnSave').style.background="var(--success)"; } else records[key].push({m,v,a,n,d:new Date().toLocaleDateString('ar-EG')}); localStorage.setItem('elect_v3_data',JSON.stringify(records)); ['meterName','vouchers','amount'].forEach(id=>document.getElementById(id).value=""); document.getElementById('notes').value="المنزلي"; document.getElementById('meterName').focus(); showData(); }
+    function editRecord(index) { if(isMonthLocked()) return alert("هذا الشهر تم توديعه."); if(isAllMealsMode) return; let key=`${document.getElementById('filterMonth').value}-${document.getElementById('filterYear').value}-M${document.getElementById('mealSelect').value}`; let item=records[key][index]; editIndex=index; document.getElementById('meterName').value=item.m; document.getElementById('vouchers').value=item.v; document.getElementById('amount').value=item.a; document.getElementById('notes').value=item.n; document.getElementById('btnSave').innerText="تحديث السجل ("+(index+1)+")"; document.getElementById('btnSave').style.background="var(--warning)"; document.getElementById('meterName').focus(); showData(); }
+    function downloadBackup() { const data=localStorage.getItem('elect_v3_data'); if(!data) return alert("لا توجد بيانات!"); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data], {type:'application/json'})); a.download=`نسخة_جباية_${new Date().toLocaleDateString('ar-EG').replace(/\//g,'-')}.json`; a.click(); }
+    function restoreBackup(input) { const file=input.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=function(e){try{const data=JSON.parse(e.target.result); if(confirm("سيتم استبدال البيانات، متأكد؟")){localStorage.setItem('elect_v3_data',JSON.stringify(data)); records=data; showData(); alert("تم الاسترجاع!");}}catch{alert("ملف غير صالح!");}}; reader.readAsText(file); }
+    function exportToPDF() { const e=document.getElementById('captureArea'); const dCols=document.querySelectorAll('.del-col'); const rAlert=document.getElementById('rejectionAlert'); let rAlertDisplay = rAlert.style.display; rAlert.style.display = 'none'; dCols.forEach(c=>c.style.display='none'); let wasD=document.body.classList.contains('dark-mode'); let wasMobile=document.body.classList.contains('mobile-view'); if(wasD) document.body.classList.remove('dark-mode'); if(wasMobile) document.body.classList.remove('mobile-view'); html2pdf().set({margin:10, filename:`تقرير_${CENTER_NAME}.pdf`, image:{type:'jpeg',quality:0.98}, html2canvas:{scale:2,useCORS:true}, jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(e).save().then(()=>{ if(!isAllMealsMode&&!isSummaryMode) dCols.forEach(c=>c.style.display=''); rAlert.style.display = rAlertDisplay; if(wasD) document.body.classList.add('dark-mode'); if(wasMobile) document.body.classList.add('mobile-view'); }); }
+    function exportToExcel() { if(isSummaryMode) return alert("اختر وجبة أو دمج."); let t=document.querySelector("#tableArea table"); if(!t) return; const dCols=document.querySelectorAll('.del-col'); dCols.forEach(c=>c.style.display='none'); let wb=XLSX.utils.table_to_book(t,{sheet:"البيانات",raw:true}); if(!wb.Workbook) wb.Workbook={}; if(!wb.Workbook.Views) wb.Workbook.Views=[]; wb.Workbook.Views[0]={RTL:true}; let ws=wb.Sheets["البيانات"]; ws['!cols']=[{wch:6},{wch:25},{wch:12},{wch:20},{wch:60},{wch:15},{wch:15}]; let fn=isAllMealsMode?`تقرير_شامل.xlsx`:`تقرير_وجبة.xlsx`; XLSX.writeFile(wb,fn); dCols.forEach(c=>c.style.display=''); }
+    function setupNavigation() { const map={'meterName':'vouchers','vouchers':'amount','amount':'notes','notes':'btnSave'}; Object.keys(map).forEach(id=>{let e=document.getElementById(id); if(e) e.addEventListener('keydown',(ev)=>{if(ev.key==='Enter'){ev.preventDefault(); let n=document.getElementById(map[id]); if(n.tagName==='BUTTON') n.click(); else n.focus();}});}); document.addEventListener('keydown',e=>{if(!isCalcOpen)return; const k=e.key; if(/[0-9]/.test(k)) calcAppend(k); if(['+','-','*','/'].includes(k)) calcAppend(k); if(k==='Enter'||k==='='){e.preventDefault();calcResult();} if(k==='Backspace') calcDelete(); if(k==='Escape') toggleCalculator(); if(k==='c'||k==='C') calcClear(); if(k==='.') calcAppend('.');}); }
+    function toggleCalculator() { isCalcOpen=!isCalcOpen; document.getElementById('calcModal').style.display=isCalcOpen?'flex':'none'; if(!isCalcOpen) document.getElementById('meterName').focus(); }
+    function calcAppend(v) { const s=document.getElementById('calcScreen'); if(s.innerText==='0'&&v!=='.') s.innerText=v; else s.innerText+=v; }
+    function calcClear() { document.getElementById('calcScreen').innerText='0'; }
+    function calcDelete() { const s=document.getElementById('calcScreen'); s.innerText=s.innerText.slice(0,-1); if(s.innerText==='') s.innerText='0'; }
+    function calcResult() { try{document.getElementById('calcScreen').innerText=eval(document.getElementById('calcScreen').innerText);}catch{document.getElementById('calcScreen').innerText='Error';} }
+    function renderTrash() { const tbody = document.getElementById('trashBody'); tbody.innerHTML = ''; if(trash.length === 0) { tbody.innerHTML = '<tr><td colspan="5">السلة فارغة</td></tr>'; return; } trash.forEach((item, index) => { let row = `<tr><td>${item.data.m}</td><td>${item.data.a.toLocaleString()}</td><td>${item.keyDisplay}</td><td>${item.originalIndex + 1}</td><td><button class="btn-restore" onclick="restoreRecord(${index})">♻️ استرجاع</button> <button class="btn-delete-forever" onclick="permanentDelete(${index})">❌ حذف نهائي</button></td></tr>`; tbody.innerHTML += row; }); }
+    function permanentDelete(trashIndex) { if(confirm("تحذير: هذا الحذف نهائي ولا يمكن التراجع عنه. هل أنت متأكد؟")) { trash.splice(trashIndex, 1); localStorage.setItem('elect_v3_trash', JSON.stringify(trash)); renderTrash(); } }
+    function deleteRecord(index) { if(isMonthLocked()) return alert("هذا الشهر تم توديعه."); if(isAllMealsMode) return; let month = document.getElementById('filterMonth').value, year = document.getElementById('filterYear').value, meal = document.getElementById('mealSelect').value; let key = `${month}-${year}-M${meal}`; if(confirm("هل تريد نقل هذا السجل إلى سلة المحذوفات؟")) { let itemData = records[key][index]; trash.push({ data: itemData, originalKey: key, keyDisplay: `شهر ${month} / وجبة ${meal}`, originalIndex: index, deletedAt: new Date().toISOString() }); records[key].splice(index, 1); editIndex = -1; localStorage.setItem('elect_v3_data', JSON.stringify(records)); localStorage.setItem('elect_v3_trash', JSON.stringify(trash)); showData(); } }
+    function toggleCompareModal() { const m=document.getElementById('compareModal'); m.style.display=(m.style.display==='flex')?'none':'flex'; if(m.style.display==='flex') renderComparisonView(); }
+</script>
+</body>
+</html>
