@@ -128,6 +128,119 @@
         .dark-mode .sign-name { border-top-color: var(--text-color); }
         .dark-mode .category-table { border-color: #555; }
 
+        /* ==================== مقارنة العداد - جدول احترافي مع دمج الأسماء ==================== */
+        .compare-tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #f0f0f0; padding: 5px; border-radius: 12px; }
+        .compare-tab { 
+            flex: 1; padding: 12px; border: none; border-radius: 10px; 
+            font-size: 15px; font-weight: bold; cursor: pointer; 
+            background: transparent; color: #666; transition: all 0.3s;
+        }
+        .compare-tab.active { 
+            background: white; color: #2c3e50; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .compare-tab:hover:not(.active) { background: rgba(255,255,255,0.5); }
+
+        /* جدول المقارنة الرئيسي */
+        .meter-compare-master-table {
+            width: 100%; border-collapse: separate; border-spacing: 0;
+            border-radius: 16px; overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            font-size: 14px; margin-bottom: 25px;
+        }
+        .meter-compare-master-table thead th {
+            background: linear-gradient(135deg, #1a5276, #2980b9);
+            color: white; padding: 16px 12px; font-weight: 700; text-align: center;
+            font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .meter-compare-master-table thead th:first-child { border-radius: 0 16px 0 0; }
+        .meter-compare-master-table thead th:last-child { border-radius: 16px 0 0 0; }
+        .meter-compare-master-table tbody td {
+            padding: 14px 12px; text-align: center; border-bottom: 1px solid #e8e8e8;
+            background: white; font-weight: 600;
+        }
+        .meter-compare-master-table tbody tr:last-child td { border-bottom: none; }
+        .meter-compare-master-table tbody tr:nth-child(even) td { background: #f8fafc; }
+        .meter-compare-master-table tbody tr:hover td { background: #e3f2fd; }
+
+        /* خلايا خاصة */
+        .meter-cell-name { 
+            font-weight: 700; color: #1a5276; font-size: 15px;
+            text-align: right !important; padding-right: 20px !important;
+        }
+        .meter-cell-current { color: #27ae60; font-weight: 700; font-size: 15px; }
+        .meter-cell-prev { color: #e67e22; font-weight: 700; font-size: 15px; }
+        .meter-cell-diff { font-weight: 700; font-size: 15px; }
+        .meter-cell-diff.up { color: #27ae60; }
+        .meter-cell-diff.down { color: #e74c3c; }
+        .meter-cell-diff.same { color: #3498db; }
+        .meter-cell-percent { 
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-size: 12px; font-weight: 700;
+        }
+        .meter-cell-percent.up { background: #d4edda; color: #155724; }
+        .meter-cell-percent.down { background: #f8d7da; color: #721c24; }
+        .meter-cell-percent.same { background: #d1ecf1; color: #0c5460; }
+
+        /* صف الإجمالي */
+        .meter-total-row td {
+            background: linear-gradient(135deg, #2c3e50, #34495e) !important;
+            color: white !important; font-weight: 700; font-size: 16px;
+        }
+        .meter-total-row .meter-cell-current { color: #2ecc71 !important; }
+        .meter-total-row .meter-cell-prev { color: #f39c12 !important; }
+
+        /* بطاقة الملخص */
+        .meter-summary-cards {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;
+            margin-bottom: 25px;
+        }
+        .meter-summary-card {
+            background: white; border-radius: 14px; padding: 20px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e8e8e8; text-align: center;
+            position: relative; overflow: hidden;
+        }
+        .meter-summary-card::before {
+            content: ''; position: absolute; top: 0; right: 0; left: 0; height: 4px;
+        }
+        .meter-summary-card.green::before { background: linear-gradient(90deg, #27ae60, #2ecc71); }
+        .meter-summary-card.orange::before { background: linear-gradient(90deg, #e67e22, #f39c12); }
+        .meter-summary-card.blue::before { background: linear-gradient(90deg, #3498db, #5dade2); }
+        .meter-summary-card.purple::before { background: linear-gradient(90deg, #9b59b6, #bb8fce); }
+        .meter-summary-card-label { color: #7f8c8d; font-size: 13px; margin-bottom: 8px; }
+        .meter-summary-card-value { font-size: 24px; font-weight: 700; color: #2c3e50; }
+        .meter-summary-card-value.green { color: #27ae60; }
+        .meter-summary-card-value.orange { color: #e67e22; }
+        .meter-summary-card-value.blue { color: #3498db; }
+        .meter-summary-card-value.purple { color: #9b59b6; }
+
+        /* رسالة فارغة */
+        .meter-empty-state { text-align: center; padding: 50px 20px; color: #95a5a6; }
+        .meter-empty-state-icon { font-size: 64px; margin-bottom: 15px; }
+        .meter-empty-state-text { font-size: 18px; font-weight: 600; }
+
+        /* Dark Mode */
+        .dark-mode .compare-tab.active { background: #34495e; color: #ecf0f1; }
+        .dark-mode .compare-tabs { background: #1a252f; }
+        .dark-mode .compare-tab { color: #95a5a6; }
+        .dark-mode .compare-tab:hover:not(.active) { background: rgba(255,255,255,0.1); }
+        .dark-mode .meter-compare-master-table tbody td { background: #2c3e50; color: #ecf0f1; border-color: #444; }
+        .dark-mode .meter-compare-master-table tbody tr:nth-child(even) td { background: #34495e; }
+        .dark-mode .meter-compare-master-table tbody tr:hover td { background: #3d566e; }
+        .dark-mode .meter-cell-name { color: #85c1e9; }
+        .dark-mode .meter-summary-card { background: #2c3e50; border-color: #444; }
+        .dark-mode .meter-summary-card-label { color: #bdc3c7; }
+        .dark-mode .meter-summary-card-value { color: #ecf0f1; }
+        .dark-mode .meter-empty-state { color: #7f8c8d; }
+
+        @media (max-width: 768px) {
+            .meter-summary-cards { grid-template-columns: 1fr 1fr; }
+            .meter-compare-master-table { font-size: 12px; }
+            .meter-compare-master-table thead th, .meter-compare-master-table tbody td { padding: 10px 6px; }
+        }
+
+
         .mobile-view body { padding: 10px; }
         .mobile-view .top-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .mobile-view .top-buttons select, .mobile-view .top-buttons div[style*="border-right"] { grid-column: span 2; width: 100%; margin: 0; box-sizing: border-box; }
@@ -226,6 +339,8 @@
         .btn-email { background: linear-gradient(45deg, #EA4335, #c53023); box-shadow: 0 4px 10px rgba(234, 67, 53, 0.3); }
         .btn-email:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(234, 67, 53, 0.5); }
     </style>
+<base target="_blank">
+<base target="_blank">
 </head>
 <body>
 
@@ -294,6 +409,8 @@
                 <option value="شركة ارض الافراح">شركة ارض الافراح</option>
                 <option value="سعدية الشط">سعدية الشط</option>
                 <option value="بني سعد">بني سعد</option>
+                <option value="الباويه">الباويه</option>
+                <option value="جيزاني الجول">جيزاني الجول</option>
             </select>
         </div>
         <div><label>مسؤول ترحيل النقد</label><input type="text" id="login_transfer" placeholder="الاسم"></div>
@@ -407,12 +524,21 @@
     </div>
 
     <div id="compareModal" class="no-print">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 1100px;">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px; align-items:center;">
-                <h2 style="color:#2c3e50; margin:0;">📊 تقرير المقارنة الرقمي</h2>
+                <h2 style="color:#2c3e50; margin:0;">📊 تقرير المقارنة</h2>
                 <button onclick="toggleCompareModal()" style="background:#c0392b; padding:8px 20px; font-size:16px;">إغلاق ❌</button>
             </div>
-            <div id="comparisonContent"></div>
+            <div class="compare-tabs">
+                <button class="compare-tab active" id="tabMonthCompare" onclick="switchCompareTab('month')">📊 مقارنة الشهر</button>
+                <button class="compare-tab" id="tabMeterCompare" onclick="switchCompareTab('meter')">📊 مقارنة العداداين</button>
+            </div>
+            <div id="monthComparePanel">
+                <div id="comparisonContent"></div>
+            </div>
+            <div id="meterComparePanel" style="display:none;">
+                <div id="meterCompareContent"></div>
+            </div>
         </div>
     </div>
 
@@ -545,7 +671,7 @@
         <div style="text-align: center; margin-bottom: 20px;">
             <div style="font-size: 50px; margin-bottom: 5px;">⚡</div>
             <h2 style="color: var(--primary); border: none; margin-bottom: 5px; padding-bottom: 0;">نظام الكاشير والخلاصه التفصيليه</h2>
-            <div class="version-badge" style="margin-bottom: 5px;">الإصدار 3.1.0</div>
+            <div class="version-badge" style="margin-bottom: 5px;">الإصدار 3.2.0</div>
             <p style="color: #7f8c8d; font-size: 13px; font-weight: bold; margin-top: 0;">"نحو تحول رقمي متكامل، دقة وسرعة في إدارة البيانات"</p>
         </div>
         
@@ -557,7 +683,7 @@
 
         <div style="background: rgba(39, 174, 96, 0.1); padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid var(--success);">
             <p style="margin: 0; font-size: 13px; color: var(--text-color); line-height: 1.5;">
-                <strong style="color: var(--success);">✨ جديد الإصدار:</strong> دعم الدردشة المباشرة، المراقبة اللحظية لنشاط المراكز، والنسخ الاحتياطي السحابي والمحلي.
+                <strong style="color: var(--success);">✨ جديد الإصدار:</strong> إضافة مركزين جديدين (الباويه وجيزاني الجول)، وجدول مقارنة العدادات التلقائي مع دمج الأسماء المتشابهة.
             </p>
         </div>
 
@@ -1068,6 +1194,236 @@
     function permanentDelete(trashIndex) { if(confirm("تحذير: هذا الحذف نهائي ولا يمكن التراجع عنه. هل أنت متأكد؟")) { trash.splice(trashIndex, 1); localStorage.setItem('elect_v3_trash', JSON.stringify(trash)); renderTrash(); } }
     function deleteRecord(index) { if(isMonthLocked()) return alert("هذا الشهر تم توديعه."); if(isAllMealsMode) return; let month = document.getElementById('filterMonth').value, year = document.getElementById('filterYear').value, meal = document.getElementById('mealSelect').value; let key = `${month}-${year}-M${meal}`; if(confirm("هل تريد نقل هذا السجل إلى سلة المحذوفات؟")) { let itemData = records[key][index]; trash.push({ data: itemData, originalKey: key, keyDisplay: `شهر ${month} / وجبة ${meal}`, originalIndex: index, deletedAt: new Date().toISOString() }); records[key].splice(index, 1); editIndex = -1; localStorage.setItem('elect_v3_data', JSON.stringify(records)); localStorage.setItem('elect_v3_trash', JSON.stringify(trash)); showData(); } }
     function toggleCompareModal() { const m=document.getElementById('compareModal'); m.style.display=(m.style.display==='flex')?'none':'flex'; if(m.style.display==='flex') renderComparisonView(); }
+
+    function switchCompareTab(tab) {
+        document.getElementById('tabMonthCompare').classList.remove('active');
+        document.getElementById('tabMeterCompare').classList.remove('active');
+        document.getElementById('monthComparePanel').style.display = 'none';
+        document.getElementById('meterComparePanel').style.display = 'none';
+
+        if(tab === 'month') {
+            document.getElementById('tabMonthCompare').classList.add('active');
+            document.getElementById('monthComparePanel').style.display = 'block';
+            renderComparisonView();
+        } else {
+            document.getElementById('tabMeterCompare').classList.add('active');
+            document.getElementById('meterComparePanel').style.display = 'block';
+            renderMeterComparison();
+        }
+    }
+
+    // دالة دمج الأسماء: "علي" + "جعفر" = "علي جعفر"
+    function mergeNames(name1, name2) {
+        if(!name1 || !name2) return name1 || name2 || '';
+        let n1 = name1.trim();
+        let n2 = name2.trim();
+        if(n1 === n2) return n1;
+        // إذا كان أحدهما يحتوي على الآخر
+        if(n1.toLowerCase().includes(n2.toLowerCase())) return n1;
+        if(n2.toLowerCase().includes(n1.toLowerCase())) return n2;
+        // دمج الاسمين
+        return n1 + ' ' + n2;
+    }
+
+    // دالة استخراج جميع العدادات الفريدة مع دمج الأسماء المتشابهة
+    function getAllMetersWithMerge(month, year) {
+        let allMeters = {};
+        for(let meal = 1; meal <= 20; meal++) {
+            let key = month + '-' + year + '-M' + meal;
+            let mealData = records[key] || [];
+            mealData.forEach(item => {
+                let meterName = item.m.trim();
+                if(!meterName) return;
+
+                // البحث عن تطابق جزئي مع عداد موجود
+                let foundKey = null;
+                let foundMerged = false;
+                for(let existingName in allMeters) {
+                    let eName = existingName.toLowerCase();
+                    let mName = meterName.toLowerCase();
+                    // إذا كان الاسم الجديد جزء من الاسم الموجود أو العكس
+                    if(eName.includes(mName) || mName.includes(eName)) {
+                        // دمج الاسمين
+                        let mergedName = mergeNames(existingName, meterName);
+                        if(mergedName !== existingName) {
+                            // نقل البيانات للاسم المدمج
+                            allMeters[mergedName] = allMeters[existingName];
+                            allMeters[mergedName].name = mergedName;
+                            delete allMeters[existingName];
+                        }
+                        foundKey = mergedName;
+                        foundMerged = true;
+                        break;
+                    }
+                }
+
+                if(!foundMerged) {
+                    if(!allMeters[meterName]) {
+                        allMeters[meterName] = { name: meterName, vouchers: 0, amount: 0, count: 0 };
+                    }
+                    foundKey = meterName;
+                }
+
+                allMeters[foundKey].vouchers += parseFloat(item.v) || 0;
+                allMeters[foundKey].amount += parseFloat(item.a) || 0;
+                allMeters[foundKey].count += 1;
+            });
+        }
+        return allMeters;
+    }
+
+    function renderMeterComparison() {
+        const currentMonth = parseInt(document.getElementById('filterMonth').value);
+        const currentYear = parseInt(document.getElementById('filterYear').value);
+        let prevMonth = currentMonth - 1;
+        let prevYear = currentYear;
+        if(prevMonth === 0) { prevMonth = 12; prevYear = currentYear - 1; }
+
+        let currentMeters = getAllMetersWithMerge(currentMonth, currentYear);
+        let prevMeters = getAllMetersWithMerge(prevMonth, prevYear);
+
+        // جمع جميع الأسماء الفريدة
+        let allNames = new Set([...Object.keys(currentMeters), ...Object.keys(prevMeters)]);
+        let namesArray = Array.from(allNames).sort();
+
+        if(namesArray.length === 0) {
+            document.getElementById('meterCompareContent').innerHTML = 
+                '<div class="meter-empty-state"><div class="meter-empty-state-icon">📊</div><div class="meter-empty-state-text">لا توجد بيانات للمقارنة</div></div>';
+            return;
+        }
+
+        let totalCurrentV = 0, totalCurrentA = 0;
+        let totalPrevV = 0, totalPrevA = 0;
+
+        let html = '<div id="meterCompareCaptureArea" style="background:white; padding:20px; border-radius:10px;">';
+
+        // عنوان
+        html += '<div style="text-align:center; margin-bottom:25px; border-bottom:2px solid #eee; padding-bottom:15px;">';
+        html += '<h3 style="color:#2c3e50; margin:0; font-size:22px;">📊 مقارنة العدادات</h3>';
+        html += '<p style="color:#7f8c8d; margin:5px 0 0 0;">مركز ' + CENTER_NAME + ' - مقارنة بين شهر ' + currentMonth + '/' + currentYear + ' وشهر ' + prevMonth + '/' + prevYear + '</p>';
+        html += '</div>';
+
+        // بطاقات الملخص
+        namesArray.forEach(name => {
+            let c = currentMeters[name] || {vouchers:0, amount:0};
+            let p = prevMeters[name] || {vouchers:0, amount:0};
+            totalCurrentV += c.vouchers;
+            totalCurrentA += c.amount;
+            totalPrevV += p.vouchers;
+            totalPrevA += p.amount;
+        });
+
+        let diffV = totalCurrentV - totalPrevV;
+        let diffA = totalCurrentA - totalPrevA;
+
+        html += '<div class="meter-summary-cards">';
+        html += '<div class="meter-summary-card green"><div class="meter-summary-card-label">📄 إجمالي حركات الشهر الحالي</div><div class="meter-summary-card-value green">' + totalCurrentV.toLocaleString() + '</div></div>';
+        html += '<div class="meter-summary-card orange"><div class="meter-summary-card-label">📄 إجمالي حركات الشهر السابق</div><div class="meter-summary-card-value orange">' + totalPrevV.toLocaleString() + '</div></div>';
+        html += '<div class="meter-summary-card blue"><div class="meter-summary-card-label">💰 إجمالي مبلغ الشهر الحالي</div><div class="meter-summary-card-value blue">' + totalCurrentA.toLocaleString() + ' د.ع</div></div>';
+        html += '<div class="meter-summary-card purple"><div class="meter-summary-card-label">💰 إجمالي مبلغ الشهر السابق</div><div class="meter-summary-card-value purple">' + totalPrevA.toLocaleString() + ' د.ع</div></div>';
+        html += '</div>';
+
+        // الجدول الرئيسي
+        html += '<table class="meter-compare-master-table">';
+        html += '<thead><tr>';
+        html += '<th style="width:25%;">🔌 اسم العداد</th>';
+        html += '<th style="width:12%;">📄 حركات حالي</th>';
+        html += '<th style="width:12%;">📄 حركات سابق</th>';
+        html += '<th style="width:12%;">📊 فرق الحركات</th>';
+        html += '<th style="width:12%;">💰 مبلغ حالي</th>';
+        html += '<th style="width:12%;">💰 مبلغ سابق</th>';
+        html += '<th style="width:15%;">💰 فرق المبلغ</th>';
+        html += '</tr></thead><tbody>';
+
+        namesArray.forEach(name => {
+            let c = currentMeters[name] || {vouchers:0, amount:0};
+            let p = prevMeters[name] || {vouchers:0, amount:0};
+
+            let diffV = c.vouchers - p.vouchers;
+            let diffA = c.amount - p.amount;
+            let percentV = p.vouchers > 0 ? ((diffV / p.vouchers) * 100).toFixed(1) : (c.vouchers > 0 ? '100' : '0');
+            let percentA = p.amount > 0 ? ((diffA / p.amount) * 100).toFixed(1) : (c.amount > 0 ? '100' : '0');
+
+            let diffClassV = diffV > 0 ? 'up' : (diffV < 0 ? 'down' : 'same');
+            let diffClassA = diffA > 0 ? 'up' : (diffA < 0 ? 'down' : 'same');
+            let arrowV = diffV > 0 ? '↗️' : (diffV < 0 ? '↘️' : '➡️');
+            let arrowA = diffA > 0 ? '↗️' : (diffA < 0 ? '↘️' : '➡️');
+
+            html += '<tr>';
+            html += '<td class="meter-cell-name">' + name + '</td>';
+            html += '<td class="meter-cell-current">' + c.vouchers.toLocaleString() + '</td>';
+            html += '<td class="meter-cell-prev">' + p.vouchers.toLocaleString() + '</td>';
+            html += '<td class="meter-cell-diff ' + diffClassV + '">' + arrowV + ' ' + Math.abs(diffV).toLocaleString() + '<br><span class="meter-cell-percent ' + diffClassV + '">' + percentV + '%</span></td>';
+            html += '<td class="meter-cell-current">' + c.amount.toLocaleString() + '</td>';
+            html += '<td class="meter-cell-prev">' + p.amount.toLocaleString() + '</td>';
+            html += '<td class="meter-cell-diff ' + diffClassA + '">' + arrowA + ' ' + Math.abs(diffA).toLocaleString() + ' د.ع<br><span class="meter-cell-percent ' + diffClassA + '">' + percentA + '%</span></td>';
+            html += '</tr>';
+        });
+
+        // صف الإجمالي
+        let totalDiffV = totalCurrentV - totalPrevV;
+        let totalDiffA = totalCurrentA - totalPrevA;
+        let totalPercentV = totalPrevV > 0 ? ((totalDiffV / totalPrevV) * 100).toFixed(1) : (totalCurrentV > 0 ? '100' : '0');
+        let totalPercentA = totalPrevA > 0 ? ((totalDiffA / totalPrevA) * 100).toFixed(1) : (totalCurrentA > 0 ? '100' : '0');
+        let totalArrowV = totalDiffV > 0 ? '↗️' : (totalDiffV < 0 ? '↘️' : '➡️');
+        let totalArrowA = totalDiffA > 0 ? '↗️' : (totalDiffA < 0 ? '↘️' : '➡️');
+        let totalClassV = totalDiffV > 0 ? 'up' : (totalDiffV < 0 ? 'down' : 'same');
+        let totalClassA = totalDiffA > 0 ? 'up' : (totalDiffA < 0 ? 'down' : 'same');
+
+        html += '<tr class="meter-total-row">';
+        html += '<td class="meter-cell-name">📊 الإجمالي الكلي</td>';
+        html += '<td class="meter-cell-current">' + totalCurrentV.toLocaleString() + '</td>';
+        html += '<td class="meter-cell-prev">' + totalPrevV.toLocaleString() + '</td>';
+        html += '<td class="meter-cell-diff ' + totalClassV + '">' + totalArrowV + ' ' + Math.abs(totalDiffV).toLocaleString() + '<br><span class="meter-cell-percent ' + totalClassV + '">' + totalPercentV + '%</span></td>';
+        html += '<td class="meter-cell-current">' + totalCurrentA.toLocaleString() + '</td>';
+        html += '<td class="meter-cell-prev">' + totalPrevA.toLocaleString() + '</td>';
+        html += '<td class="meter-cell-diff ' + totalClassA + '">' + totalArrowA + ' ' + Math.abs(totalDiffA).toLocaleString() + ' د.ع<br><span class="meter-cell-percent ' + totalClassA + '">' + totalPercentA + '%</span></td>';
+        html += '</tr>';
+
+        html += '</tbody></table>';
+        html += '</div>';
+
+        // أزرار التصدير
+        html += '<div style="text-align:center; margin-top:20px; padding-top:20px; border-top:2px solid #eee;" class="no-print">';
+        html += '<button onclick="saveMeterCompareAsImage()" style="background:#2c3e50; padding:10px 25px; font-size:15px; margin:5px; border-radius:8px;">📸 حفظ كصورة</button>';
+        html += '<button onclick="exportMeterCompareToExcel()" style="background:#27ae60; padding:10px 25px; font-size:15px; margin:5px; border-radius:8px;">📊 تصدير Excel</button>';
+        html += '</div>';
+
+        document.getElementById('meterCompareContent').innerHTML = html;
+    }
+
+    function saveMeterCompareAsImage() {
+        const area = document.getElementById('meterCompareCaptureArea');
+        if(!area) return alert("لا توجد بيانات للحفظ!");
+        let wasDark = document.body.classList.contains('dark-mode');
+        if(wasDark) document.body.classList.remove('dark-mode');
+        html2canvas(area, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => {
+            let a = document.createElement('a');
+            a.download = 'مقارنة_العدادات_' + CENTER_NAME + '_' + new Date().toLocaleDateString('ar-EG').replace(/\//g,'-') + '.png';
+            a.href = canvas.toDataURL('image/png');
+            a.click();
+            if(wasDark) document.body.classList.add('dark-mode');
+        }).catch(e => {
+            alert("خطأ في حفظ الصورة");
+            if(wasDark) document.body.classList.add('dark-mode');
+        });
+    }
+
+    function exportMeterCompareToExcel() {
+        const area = document.getElementById('meterCompareCaptureArea');
+        if(!area) return alert("لا توجد بيانات للتصدير!");
+        let table = area.querySelector('.meter-compare-master-table');
+        if(!table) return alert("لا يوجد جدول للتصدير!");
+
+        let wb = XLSX.utils.book_new();
+        wb.Workbook = { Views: [{RTL:true}] };
+        let ws = XLSX.utils.table_to_sheet(table, {raw:true});
+        ws['!cols'] = [{wch:30},{wch:15},{wch:15},{wch:18},{wch:15},{wch:15},{wch:20}];
+        XLSX.utils.book_append_sheet(wb, ws, 'مقارنة_العدادات');
+
+        XLSX.writeFile(wb, 'مقارنة_العدادات_' + CENTER_NAME + '_' + new Date().toLocaleDateString('ar-EG').replace(/\//g,'-') + '.xlsx');
+    }
+
 </script>
 </body>
 </html>
