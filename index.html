@@ -241,7 +241,7 @@
         }
 
 
-        .mobile-view body { padding: 10px; }
+        body.mobile-view { padding: 10px; }
         .mobile-view .top-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .mobile-view .top-buttons select, .mobile-view .top-buttons div[style*="border-right"] { grid-column: span 2; width: 100%; margin: 0; box-sizing: border-box; }
         .mobile-view .top-buttons div[style*="border-right"] { height: 1px; border-right: none !important; border-bottom: 2px solid #ccc; margin: 10px 0; }
@@ -255,6 +255,34 @@
         .mobile-view .summary-box { flex-direction: column; gap: 15px; }
         .mobile-view .signatures-section { flex-direction: column; gap: 20px; text-align: center; }
         .mobile-view .sign-box { width: 100%; }
+
+        /* تكيّف تلقائي للشاشات الصغيرة، مع إبقاء وضع الهاتف اليدوي متاحًا */
+        @media (max-width: 768px) {
+            body { padding: 10px; padding-bottom: 35px; }
+            .top-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+            .top-buttons select, .top-buttons div[style*="border-right"] { grid-column: 1 / -1; width: 100%; min-width: 0; box-sizing: border-box; margin: 0; }
+            .top-buttons div[style*="border-right"] { height: 1px; border-right: 0 !important; border-bottom: 2px solid #ccc; margin: 8px 0; }
+            .top-buttons button { grid-column: span 1; width: 100%; min-width: 0; box-sizing: border-box; margin: 0; padding: 10px 7px; font-size: 13px; overflow-wrap: anywhere; }
+            .top-buttons #btnToggleAll, .top-buttons #btnSendToAdmin,
+            .top-buttons button[onclick="openSummaryMode()"], .top-buttons button[onclick="toggleCompareModal()"],
+            .top-buttons button[onclick="toggleTrashModal()"], .top-buttons button[onclick="toggleCalculator()"] { grid-column: 1 / -1; }
+            .form-row { flex-direction: column; align-items: stretch; gap: 10px; }
+            .form-row div { width: 100%; min-width: 0; }
+            .form-row input, .form-row select { width: 100%; min-width: 0; box-sizing: border-box; }
+            .form-row button { width: 100%; box-sizing: border-box; }
+            #tableArea { display: block; width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            #tableArea table, .category-table table { min-width: 600px; font-size: 13px; }
+            .category-table { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .summary-box { flex-direction: column; gap: 12px; }
+            .signatures-section { flex-direction: column; gap: 18px; text-align: center; }
+            .sign-box { width: 100%; }
+            .modal-content { width: calc(100% - 20px); max-width: none; max-height: 92vh; box-sizing: border-box; padding: 14px; }
+            #compareModal .modal-content { overflow-x: auto; }
+            .calculator { width: min(350px, calc(100vw - 28px)); box-sizing: border-box; padding: 16px; }
+            .calc-keys { gap: 8px; }
+            .calc-btn { padding: 14px 8px; }
+        }
+
 
         .rejection-alert { display:none; background-color: #fdedec; color: #c0392b; border: 2px solid #c0392b; padding: 15px; border-radius: 8px; margin-bottom: 15px; position: relative; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .rejection-alert h3 { margin-top: 0; color: #c0392b; border:none; font-size: 18px; margin-bottom: 5px;}
@@ -411,6 +439,7 @@
                 <option value="بني سعد">بني سعد</option>
                 <option value="الباويه">الباويه</option>
                 <option value="جيزاني الجول">جيزاني الجول</option>
+                <option value="الزهيرات">الزهيرات</option>
             </select>
         </div>
         <div><label>مسؤول ترحيل النقد</label><input type="text" id="login_transfer" placeholder="الاسم"></div>
@@ -593,10 +622,12 @@
 
         <div class="top-buttons no-print">
             <select id="filterMonth" onchange="showData()"></select>
-            <select id="filterYear" onchange="showData()">
+            <select id="filterYear" onchange="handleYearSelection()">
                 <option value="2025">2025</option>
                 <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
             </select>
+            <span id="year2027Countdown" style="display:none;background:#fff3cd;color:#765600;padding:7px 10px;border-radius:18px;font-size:12px;font-weight:bold;white-space:nowrap;" aria-live="polite"></span>
             <select id="mealSelect" class="meal-selector" onchange="updateMealUI()">
                 <option value="1">الوجبة 1</option>
                 <option value="2">الوجبة 2</option>
@@ -640,6 +671,11 @@
             <input type="file" id="backupFile" style="display:none" onchange="restoreBackup(this)">
         </div>
 
+        <div id="year2027LockPanel" class="card no-print" style="display:none;text-align:center;max-width:800px;margin:15px auto;">
+            <h2 style="border:0;">🔒 سنة 2027 لم تُفتح بعد</h2>
+            <p>ستُفتح بيانات سنة 2027 عند بداية السنة. يظهر العد التنازلي بجانب اختيار السنة.</p>
+            <button type="button" onclick="document.getElementById('filterYear').value='2026';handleYearSelection();" style="background:#1a5276;">العودة إلى 2026</button>
+        </div>
         <div id="captureArea">
             <div id="headerPrint"></div>
             <div id="categorySummaryArea"></div>
@@ -683,7 +719,7 @@
 
         <div style="background: rgba(39, 174, 96, 0.1); padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid var(--success);">
             <p style="margin: 0; font-size: 13px; color: var(--text-color); line-height: 1.5;">
-                <strong style="color: var(--success);">✨ جديد الإصدار:</strong> إضافة مركزين جديدين (الباويه وجيزاني الجول)، وجدول مقارنة العدادات التلقائي مع دمج الأسماء المتشابهة.
+                <strong style="color: var(--success);">✨ جديد الإصدار:</strong> إضافة مركزين جديدين (الباويه وجيزاني الجول)،  
             </p>
         </div>
 
@@ -1046,7 +1082,9 @@
     const monthSelect = document.getElementById('filterMonth'); for(let i=1; i<=12; i++) { let opt = document.createElement('option'); opt.value = i; opt.text = "شهر " + i; if(i === new Date().getMonth()+1) opt.selected = true; monthSelect.appendChild(opt); }
     
     window.onload = function() { 
-        setupNavigation(); 
+        setupNavigation();
+        updateYear2027Countdown();
+        setInterval(updateYear2027Countdown, 1000); 
         setupLoginNavigation(); 
         
         let savedSettings = JSON.parse(localStorage.getItem('elect_v3_saved_login'));
@@ -1079,8 +1117,36 @@
         return stats; 
     }
 
+    const YEAR_2027_START = new Date(2027, 0, 1, 0, 0, 0).getTime();
+    function isYear2027Locked() { return document.getElementById('filterYear').value === '2027' && Date.now() < YEAR_2027_START; }
+    function handleYearSelection() { updateYear2027Countdown(); showData(); }
+    function updateYear2027Countdown() {
+        const badge = document.getElementById('year2027Countdown');
+        if(!badge) return;
+        if(document.getElementById('filterYear').value !== '2027') { badge.style.display='none'; badge.textContent=''; return; }
+        badge.style.display='inline-block';
+        const remaining = YEAR_2027_START - Date.now();
+        if(remaining <= 0) { badge.textContent='🔓 سنة 2027 متاحة'; badge.style.background='#eafaf1'; badge.style.color='#1e8449'; const panel=document.getElementById('year2027LockPanel'); if(panel?.style.display==='block') { panel.style.display='none'; showData(); } return; }
+        const seconds=Math.floor(remaining/1000), days=Math.floor(seconds/86400), hours=Math.floor((seconds%86400)/3600), minutes=Math.floor((seconds%3600)/60), secs=seconds%60;
+        badge.style.background='#fff3cd'; badge.style.color='#765600';
+        badge.textContent=`⏳ يفتح 2027 بعد ${days} يوم و${hours} ساعة و${minutes} دقيقة و${secs} ثانية`;
+    }
+
     function showData() {
-        let month = document.getElementById('filterMonth').value; let year = document.getElementById('filterYear').value; let locked = isMonthLocked();
+        let month = document.getElementById('filterMonth').value; let year = document.getElementById('filterYear').value;
+        updateYear2027Countdown();
+        const year2027Panel=document.getElementById('year2027LockPanel');
+        if(isYear2027Locked()) {
+            document.getElementById('inputCard').style.display='none';
+            document.getElementById('lockMessage').style.display='none';
+            document.getElementById('btnSendToAdmin').style.display='none';
+            document.getElementById('captureArea').style.display='none';
+            year2027Panel.style.display='block';
+            return;
+        }
+        year2027Panel.style.display='none';
+        document.getElementById('captureArea').style.display='';
+        let locked = isMonthLocked();
         document.getElementById('inputCard').style.display = (locked || isAllMealsMode) ? 'none' : 'block'; document.getElementById('lockMessage').style.display = locked ? 'block' : 'none'; document.getElementById('btnSendToAdmin').style.display = 'none'; document.getElementById('rejectionAlert').style.display = 'none'; document.getElementById('categorySummaryArea').innerHTML = ""; document.getElementById('tableArea').innerHTML = "";
         
         if (isSummaryMode) { 
@@ -1178,7 +1244,7 @@
     function toggleAllMeals() { if(isSummaryMode){isSummaryMode=false; isAllMealsMode=true;} else{isAllMealsMode=!isAllMealsMode;} let b=document.getElementById('btnToggleAll'), ms=document.getElementById('mealSelect'), ic=document.getElementById('inputCard'); if(isAllMealsMode){b.innerText="↩️ عودة للوجبات المفردة"; b.style.background="#555"; ms.disabled=true; ic.style.display="none";}else{b.innerText="📑 تجميع ودمج الوجبات"; b.style.background="linear-gradient(45deg, #2c3e50, #4ca1af)"; ms.disabled=false; if(!isMonthLocked()) ic.style.display="block";} showData(); }
     function updateMealUI() { isSummaryMode=false; editIndex=-1; document.getElementById('mealInputTitle').innerText=`➕ إدخال بيانات (الوجبة ${document.getElementById('mealSelect').value})`; showData(); }
     function toggleDarkMode() { document.body.classList.toggle('dark-mode'); }
-    function saveItem() { if(isMonthLocked()) return alert("هذا الشهر تم توديعه ولا يمكن التعديل عليه."); let m=document.getElementById('meterName').value.trim(), v=parseFloat(document.getElementById('vouchers').value)||0, a=parseFloat(document.getElementById('amount').value)||0, n=document.getElementById('notes').value||"-", key=`${document.getElementById('filterMonth').value}-${document.getElementById('filterYear').value}-M${document.getElementById('mealSelect').value}`; if(!m||v<=0) return alert("أدخل البيانات بشكل صحيح"); if(!records[key]) records[key]=[]; if(editIndex>-1) { records[key][editIndex]={m,v,a,n,d:records[key][editIndex].d}; editIndex=-1; document.getElementById('btnSave').innerText="حفظ وإضافة (Enter)"; document.getElementById('btnSave').style.background="var(--success)"; } else records[key].push({m,v,a,n,d:new Date().toLocaleDateString('ar-EG')}); localStorage.setItem('elect_v3_data',JSON.stringify(records)); ['meterName','vouchers','amount'].forEach(id=>document.getElementById(id).value=""); document.getElementById('notes').value="المنزلي"; document.getElementById('meterName').focus(); showData(); }
+    function saveItem() { if(isYear2027Locked()) return alert("سنة 2027 لم تُفتح بعد."); if(isMonthLocked()) return alert("هذا الشهر تم توديعه ولا يمكن التعديل عليه."); let m=document.getElementById('meterName').value.trim(), v=parseFloat(document.getElementById('vouchers').value)||0, a=parseFloat(document.getElementById('amount').value)||0, n=document.getElementById('notes').value||"-", key=`${document.getElementById('filterMonth').value}-${document.getElementById('filterYear').value}-M${document.getElementById('mealSelect').value}`; if(!m||v<=0) return alert("أدخل البيانات بشكل صحيح"); if(!records[key]) records[key]=[]; if(editIndex>-1) { records[key][editIndex]={m,v,a,n,d:records[key][editIndex].d}; editIndex=-1; document.getElementById('btnSave').innerText="حفظ وإضافة (Enter)"; document.getElementById('btnSave').style.background="var(--success)"; } else records[key].push({m,v,a,n,d:new Date().toLocaleDateString('ar-EG')}); localStorage.setItem('elect_v3_data',JSON.stringify(records)); ['meterName','vouchers','amount'].forEach(id=>document.getElementById(id).value=""); document.getElementById('notes').value="المنزلي"; document.getElementById('meterName').focus(); showData(); }
     function editRecord(index) { if(isMonthLocked()) return alert("هذا الشهر تم توديعه."); if(isAllMealsMode) return; let key=`${document.getElementById('filterMonth').value}-${document.getElementById('filterYear').value}-M${document.getElementById('mealSelect').value}`; let item=records[key][index]; editIndex=index; document.getElementById('meterName').value=item.m; document.getElementById('vouchers').value=item.v; document.getElementById('amount').value=item.a; document.getElementById('notes').value=item.n; document.getElementById('btnSave').innerText="تحديث السجل ("+(index+1)+")"; document.getElementById('btnSave').style.background="var(--warning)"; document.getElementById('meterName').focus(); showData(); }
     function downloadBackup() { const data=localStorage.getItem('elect_v3_data'); if(!data) return alert("لا توجد بيانات!"); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([data], {type:'application/json'})); a.download=`نسخة_جباية_${new Date().toLocaleDateString('ar-EG').replace(/\//g,'-')}.json`; a.click(); }
     function restoreBackup(input) { const file=input.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=function(e){try{const data=JSON.parse(e.target.result); if(confirm("سيتم استبدال البيانات، متأكد؟")){localStorage.setItem('elect_v3_data',JSON.stringify(data)); records=data; showData(); alert("تم الاسترجاع!");}}catch{alert("ملف غير صالح!");}}; reader.readAsText(file); }
