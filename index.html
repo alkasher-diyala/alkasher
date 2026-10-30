@@ -719,7 +719,7 @@
 
         <div style="background: rgba(39, 174, 96, 0.1); padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid var(--success);">
             <p style="margin: 0; font-size: 13px; color: var(--text-color); line-height: 1.5;">
-                <strong style="color: var(--success);">✨ جديد الإصدار:</strong> إضافة مركزين جديدين (الباويه وجيزاني الجول)،  
+                <strong style="color: var(--success);">✨ جديد الإصدار:</strong> إضافة مراكز جديدة (الباويه وجيزاني الجول و الزهيرات +اصلاح بعض المشاكل في الهاتف)،  
             </p>
         </div>
 
@@ -1231,11 +1231,11 @@
         html2canvas(n, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => { 
             let a=document.createElement('a'); a.download=fn; a.href=canvas.toDataURL('image/png'); a.click(); 
             if(!isAllMealsMode) dCols.forEach(c=>c.style.display=''); rAlert.style.display = rAlertDisplay; 
-            if(wasD) document.body.classList.add('dark-mode'); if(wasMobile) document.body.classList.remove('mobile-view'); 
+            if(wasD) document.body.classList.add('dark-mode'); if(wasMobile) document.body.classList.add('mobile-view'); 
         }).catch(e=>{ 
             alert("خطأ في حفظ الصورة."); 
             if(!isAllMealsMode) dCols.forEach(c=>c.style.display=''); rAlert.style.display = rAlertDisplay; 
-            if(wasD) document.body.classList.add('dark-mode'); if(wasMobile) document.body.classList.remove('mobile-view'); 
+            if(wasD) document.body.classList.add('dark-mode'); if(wasMobile) document.body.classList.add('mobile-view'); 
         }); 
     }
 
@@ -1257,6 +1257,18 @@
     function calcDelete() { const s=document.getElementById('calcScreen'); s.innerText=s.innerText.slice(0,-1); if(s.innerText==='') s.innerText='0'; }
     function calcResult() { try{document.getElementById('calcScreen').innerText=eval(document.getElementById('calcScreen').innerText);}catch{document.getElementById('calcScreen').innerText='Error';} }
     function renderTrash() { const tbody = document.getElementById('trashBody'); tbody.innerHTML = ''; if(trash.length === 0) { tbody.innerHTML = '<tr><td colspan="5">السلة فارغة</td></tr>'; return; } trash.forEach((item, index) => { let row = `<tr><td>${item.data.m}</td><td>${item.data.a.toLocaleString()}</td><td>${item.keyDisplay}</td><td>${item.originalIndex + 1}</td><td><button class="btn-restore" onclick="restoreRecord(${index})">♻️ استرجاع</button> <button class="btn-delete-forever" onclick="permanentDelete(${index})">❌ حذف نهائي</button></td></tr>`; tbody.innerHTML += row; }); }
+    function restoreRecord(trashIndex) {
+        const item = trash[trashIndex];
+        if (!item || !item.data || !item.originalKey) return alert("تعذر العثور على السجل لاسترجاعه.");
+        if (!records[item.originalKey]) records[item.originalKey] = [];
+        const index = Math.max(0, Math.min(item.originalIndex, records[item.originalKey].length));
+        records[item.originalKey].splice(index, 0, item.data);
+        trash.splice(trashIndex, 1);
+        localStorage.setItem('elect_v3_data', JSON.stringify(records));
+        localStorage.setItem('elect_v3_trash', JSON.stringify(trash));
+        renderTrash();
+        showData();
+    }
     function permanentDelete(trashIndex) { if(confirm("تحذير: هذا الحذف نهائي ولا يمكن التراجع عنه. هل أنت متأكد؟")) { trash.splice(trashIndex, 1); localStorage.setItem('elect_v3_trash', JSON.stringify(trash)); renderTrash(); } }
     function deleteRecord(index) { if(isMonthLocked()) return alert("هذا الشهر تم توديعه."); if(isAllMealsMode) return; let month = document.getElementById('filterMonth').value, year = document.getElementById('filterYear').value, meal = document.getElementById('mealSelect').value; let key = `${month}-${year}-M${meal}`; if(confirm("هل تريد نقل هذا السجل إلى سلة المحذوفات؟")) { let itemData = records[key][index]; trash.push({ data: itemData, originalKey: key, keyDisplay: `شهر ${month} / وجبة ${meal}`, originalIndex: index, deletedAt: new Date().toISOString() }); records[key].splice(index, 1); editIndex = -1; localStorage.setItem('elect_v3_data', JSON.stringify(records)); localStorage.setItem('elect_v3_trash', JSON.stringify(trash)); showData(); } }
     function toggleCompareModal() { const m=document.getElementById('compareModal'); m.style.display=(m.style.display==='flex')?'none':'flex'; if(m.style.display==='flex') renderComparisonView(); }
