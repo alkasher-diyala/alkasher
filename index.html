@@ -560,7 +560,7 @@
             </div>
             <div class="compare-tabs">
                 <button class="compare-tab active" id="tabMonthCompare" onclick="switchCompareTab('month')">📊 مقارنة الشهر</button>
-                <button class="compare-tab" id="tabMeterCompare" onclick="switchCompareTab('meter')">📊 مقارنة العداداين</button>
+                <button class="compare-tab" id="tabMeterCompare" onclick="switchCompareTab('meter')">📊 مقارنة العدادين</button>
             </div>
             <div id="monthComparePanel">
                 <div id="comparisonContent"></div>
@@ -719,7 +719,7 @@
 
         <div style="background: rgba(39, 174, 96, 0.1); padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; border-right: 4px solid var(--success);">
             <p style="margin: 0; font-size: 13px; color: var(--text-color); line-height: 1.5;">
-                <strong style="color: var(--success);">✨ جديد الإصدار:</strong> إضافة مراكز جديدة (الباويه وجيزاني الجول و الزهيرات +اصلاح بعض المشاكل في الهاتف)،  
+                <strong style="color: var(--success);">✨ جديد الإصدار:</strong> إضافة مراكز جديدة (الباويه وجيزاني الجول و الزهيرات   واصلاح مكشلة حفظ الصوره على الهاتف)،  
             </p>
         </div>
 
@@ -1222,23 +1222,47 @@
         }, 300); 
     }
 
-    function saveAsImage() { 
-        const n=document.getElementById('captureArea'); const dCols=document.querySelectorAll('.del-col'); const rAlert=document.getElementById('rejectionAlert'); 
-        let rAlertDisplay = rAlert.style.display; rAlert.style.display = 'none'; dCols.forEach(c=>c.style.display='none'); 
-        let wasD=document.body.classList.contains('dark-mode'); let wasMobile=document.body.classList.contains('mobile-view'); 
-        if(wasD) document.body.classList.remove('dark-mode'); if(wasMobile) document.body.classList.remove('mobile-view'); 
-        let fn=isAllMealsMode?`المجموع_الكلي_${CENTER_NAME}.png`:`تقرير_${CENTER_NAME}.png`; 
-        html2canvas(n, { scale: 2, backgroundColor: '#ffffff', useCORS: true }).then(canvas => { 
-            let a=document.createElement('a'); a.download=fn; a.href=canvas.toDataURL('image/png'); a.click(); 
-            if(!isAllMealsMode) dCols.forEach(c=>c.style.display=''); rAlert.style.display = rAlertDisplay; 
-            if(wasD) document.body.classList.add('dark-mode'); if(wasMobile) document.body.classList.add('mobile-view'); 
-        }).catch(e=>{ 
-            alert("خطأ في حفظ الصورة."); 
-            if(!isAllMealsMode) dCols.forEach(c=>c.style.display=''); rAlert.style.display = rAlertDisplay; 
-            if(wasD) document.body.classList.add('dark-mode'); if(wasMobile) document.body.classList.add('mobile-view'); 
-        }); 
-    }
+    function saveAsImage() {
+        const area = document.getElementById('captureArea');
+        const columns = Array.from(document.querySelectorAll('.del-col'));
+        const rejectionAlert = document.getElementById('rejectionAlert');
+        const wasDark = document.body.classList.contains('dark-mode');
+        const wasMobile = document.body.classList.contains('mobile-view');
+        const oldWidth = area.style.width;
+        const oldMaxWidth = area.style.maxWidth;
+        const oldBoxSizing = area.style.boxSizing;
+        const oldAlertDisplay = rejectionAlert.style.display;
+        const oldColumnDisplays = columns.map(column => column.style.display);
 
+        document.body.classList.remove('dark-mode', 'mobile-view');
+        area.style.width = '1200px';
+        area.style.maxWidth = 'none';
+        area.style.boxSizing = 'border-box';
+        rejectionAlert.style.display = 'none';
+        columns.forEach(column => column.style.display = 'none');
+
+        const restoreView = () => {
+            area.style.width = oldWidth;
+            area.style.maxWidth = oldMaxWidth;
+            area.style.boxSizing = oldBoxSizing;
+            rejectionAlert.style.display = oldAlertDisplay;
+            columns.forEach((column, index) => column.style.display = oldColumnDisplays[index]);
+            if (wasDark) document.body.classList.add('dark-mode');
+            if (wasMobile) document.body.classList.add('mobile-view');
+        };
+
+        const filename = isAllMealsMode ? `المجموع_الكلي_${CENTER_NAME}.png` : `تقرير_${CENTER_NAME}.png`;
+        html2canvas(area, { scale: 2, backgroundColor: '#ffffff', useCORS: true, windowWidth: 1280 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            restoreView();
+        }).catch(error => {
+            alert("خطأ في حفظ الصورة.");
+            restoreView();
+        });
+    }
     function renderComparisonView() { const content = document.getElementById('comparisonContent'); let m = parseInt(document.getElementById('filterMonth').value); let y = parseInt(document.getElementById('filterYear').value); let prevM = m - 1; let prevY = y; if(prevM === 0) { prevM = 12; prevY = y - 1; } function getStats(month, year) { let v = 0, a = 0; [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20].forEach(meal => { (records[`${month}-${year}-M${meal}`] || []).forEach(i => { v += parseFloat(i.v) || 0; a += parseFloat(i.a) || 0; }); }); return {v, a}; } let curr = getStats(m, y); let prev = getStats(prevM, prevY); let diffA = curr.a - prev.a; let diffV = curr.v - prev.v; let clsA = diffA > 0 ? 'diff-up' : (diffA < 0 ? 'diff-down' : 'diff-same'); let clsV = diffV > 0 ? 'diff-up' : (diffV < 0 ? 'diff-down' : 'diff-same'); let txtA = diffA > 0 ? `+${diffA.toLocaleString()}` : diffA.toLocaleString(); let txtV = diffV > 0 ? `+${diffV}` : diffV; content.innerHTML = `<div class="comp-main-summary"><h3 style="margin-top:0; border:none; color:white;">مقارنة شهر ${m} مع شهر ${prevM} لعام ${y}</h3><div class="main-stat-row"><div class="main-stat-item"><span class="main-stat-label">الشهر الحالي</span><span class="main-stat-val">${curr.a.toLocaleString()}</span></div><div class="main-stat-item"><span class="main-stat-label">الشهر السابق</span><span class="main-stat-val">${prev.a.toLocaleString()}</span></div></div></div><div class="comp-grid"><div class="comp-card"><div class="comp-header">💰 الإيرادات (المبلغ)</div><div class="comp-row"><span>الحالي:</span> <span class="comp-val">${curr.a.toLocaleString()}</span></div><div class="comp-row"><span>السابق:</span> <span class="comp-val">${prev.a.toLocaleString()}</span></div><div class="comp-diff ${clsA}" style="direction:ltr;">${txtA} :الفرق</div></div><div class="comp-card"><div class="comp-header">📄 عدد الحركات</div><div class="comp-row"><span>الحالي:</span> <span class="comp-val">${curr.v}</span></div><div class="comp-row"><span>السابق:</span> <span class="comp-val">${prev.v}</span></div><div class="comp-diff ${clsV}" style="direction:ltr;">${txtV} :الفرق</div></div></div>`; }
     function openSummaryMode() { isSummaryMode=true; isAllMealsMode=false; document.getElementById('mealSelect').disabled=false; let btn=document.getElementById('btnToggleAll'); btn.innerText="📑 تجميع ودمج الوجبات"; btn.style.background="linear-gradient(45deg, #2c3e50, #4ca1af)"; showData(); }
     function toggleAllMeals() { if(isSummaryMode){isSummaryMode=false; isAllMealsMode=true;} else{isAllMealsMode=!isAllMealsMode;} let b=document.getElementById('btnToggleAll'), ms=document.getElementById('mealSelect'), ic=document.getElementById('inputCard'); if(isAllMealsMode){b.innerText="↩️ عودة للوجبات المفردة"; b.style.background="#555"; ms.disabled=true; ic.style.display="none";}else{b.innerText="📑 تجميع ودمج الوجبات"; b.style.background="linear-gradient(45deg, #2c3e50, #4ca1af)"; ms.disabled=false; if(!isMonthLocked()) ic.style.display="block";} showData(); }
@@ -1377,7 +1401,7 @@
 
         // عنوان
         html += '<div style="text-align:center; margin-bottom:25px; border-bottom:2px solid #eee; padding-bottom:15px;">';
-        html += '<h3 style="color:#2c3e50; margin:0; font-size:22px;">📊 مقارنة العدادات</h3>';
+        html += '<h3 style="color:#2c3e50; margin:0; font-size:22px;">📊 مقارنة العدادين</h3>';
         html += '<p style="color:#7f8c8d; margin:5px 0 0 0;">مركز ' + CENTER_NAME + ' - مقارنة بين شهر ' + currentMonth + '/' + currentYear + ' وشهر ' + prevMonth + '/' + prevYear + '</p>';
         html += '</div>';
 
@@ -1497,9 +1521,9 @@
         wb.Workbook = { Views: [{RTL:true}] };
         let ws = XLSX.utils.table_to_sheet(table, {raw:true});
         ws['!cols'] = [{wch:30},{wch:15},{wch:15},{wch:18},{wch:15},{wch:15},{wch:20}];
-        XLSX.utils.book_append_sheet(wb, ws, 'مقارنة_العدادات');
+        XLSX.utils.book_append_sheet(wb, ws, 'مقارنة_العدادين');
 
-        XLSX.writeFile(wb, 'مقارنة_العدادات_' + CENTER_NAME + '_' + new Date().toLocaleDateString('ar-EG').replace(/\//g,'-') + '.xlsx');
+        XLSX.writeFile(wb, 'مقارنة_العدادين_' + CENTER_NAME + '_' + new Date().toLocaleDateString('ar-EG').replace(/\//g,'-') + '.xlsx');
     }
 
 </script>
